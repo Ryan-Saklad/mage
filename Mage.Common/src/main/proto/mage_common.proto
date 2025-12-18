@@ -351,6 +351,17 @@ enum MageObjectType {
   MAGE_OBJECT_TYPE_NULL = 13;
 }
 
+// MulliganType - matches mage.game.mulligan.MulliganType exactly
+enum MulliganType {
+  MULLIGAN_TYPE_UNSPECIFIED = 0;
+  MULLIGAN_TYPE_GAME_DEFAULT = 1;
+  MULLIGAN_TYPE_VANCOUVER = 2;
+  MULLIGAN_TYPE_PARIS = 3;
+  MULLIGAN_TYPE_LONDON = 4;
+  MULLIGAN_TYPE_SMOOTHED_LONDON = 5;
+  MULLIGAN_TYPE_CANADIAN_HIGHLANDER = 6;
+}
+
 // PlayableObjectStats - for card playability information
 message PlayableObjectStats {
   int32 playable_amount = 1;

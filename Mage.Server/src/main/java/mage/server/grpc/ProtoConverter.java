@@ -68,13 +68,7 @@ public final class ProtoConverter {
 
     public static mage.players.net.UserData fromProtoUserData(mage.proto.UserDataProto proto) {
         if (proto == null) return null;
-        // UserData constructor: (UserGroup, avatarId, allowRequestShowHandCards, confirmEmptyManaPool,
-        //                        userSkipPrioritySteps, flagName, askMoveToGraveOrder, manaPoolAutomatic,
-        //                        manaPoolAutomaticRestricted, passPriorityCast, passPriorityActivation,
-        //                        autoOrderTrigger, autoTargetLevel, useSameSettingsForReplacementEffects,
-        //                        useFirstManaAbility, userIdStr)
         mage.players.net.UserSkipPrioritySteps skipSteps = new mage.players.net.UserSkipPrioritySteps();
-        // Parse skip steps from the serialized string if needed
         mage.players.net.UserData userData = new mage.players.net.UserData(
                 mage.players.net.UserGroup.DEFAULT,
                 proto.getAvatarId(),
@@ -83,15 +77,15 @@ public final class ProtoConverter {
                 skipSteps,
                 proto.getFlagName(),
                 proto.getAskMoveToGraveOrder(),
-                proto.getManaAutoPayment(),
-                false, // manaPoolAutomaticRestricted - not in proto
-                false, // passPriorityCast - not in proto
-                false, // passPriorityActivation - not in proto
-                false, // autoOrderTrigger - not in proto
-                1, // autoTargetLevel - not in proto
-                false, // useSameSettingsForReplacementEffects - not in proto
-                false, // useFirstManaAbility - not in proto
-                "" // userIdStr - not in proto
+                proto.getManaPoolAutomatic(),
+                proto.getManaPoolAutomaticRestricted(),
+                proto.getPassPriorityCast(),
+                proto.getPassPriorityActivation(),
+                proto.getAutoOrderTrigger(),
+                proto.getAutoTargetLevel(),
+                proto.getUseSameSettingsForReplacementEffects(),
+                proto.getUseFirstManaAbility(),
+                proto.getUserIdStr()
         );
         return userData;
     }
@@ -99,14 +93,22 @@ public final class ProtoConverter {
     public static mage.proto.UserDataProto toProtoUserData(mage.players.net.UserData userData) {
         if (userData == null) return mage.proto.UserDataProto.getDefaultInstance();
         return mage.proto.UserDataProto.newBuilder()
-                .setAvatarId(userData.getAvatarId())
                 .setGroupId(userData.getGroupId())
+                .setAvatarId(userData.getAvatarId())
                 .setAllowRequestShowHandCards(userData.isAllowRequestHandToAll())
                 .setConfirmEmptyManaPool(userData.confirmEmptyManaPool())
-                .setUserSkipPrioritySteps("") // Serialization handled separately
+                .setUserSkipPrioritySteps("")
                 .setFlagName(userData.getFlagName() != null ? userData.getFlagName() : "")
                 .setAskMoveToGraveOrder(userData.askMoveToGraveOrder())
-                .setManaAutoPayment(userData.isManaPoolAutomatic())
+                .setManaPoolAutomatic(userData.isManaPoolAutomatic())
+                .setManaPoolAutomaticRestricted(userData.isManaPoolAutomaticRestricted())
+                .setPassPriorityCast(userData.isPassPriorityCast())
+                .setPassPriorityActivation(userData.isPassPriorityActivation())
+                .setAutoOrderTrigger(userData.isAutoOrderTrigger())
+                .setAutoTargetLevel(userData.getAutoTargetLevel())
+                .setUseSameSettingsForReplacementEffects(userData.isUseSameSettingsForReplacementEffects())
+                .setUseFirstManaAbility(userData.isUseFirstManaAbility())
+                .setUserIdStr("")  // userIdStr is private with no getter in UserData
                 .build();
     }
 
@@ -313,6 +315,165 @@ public final class ProtoConverter {
             case CASUAL: return mage.proto.SkillLevel.SKILL_LEVEL_CASUAL;
             case SERIOUS: return mage.proto.SkillLevel.SKILL_LEVEL_SERIOUS;
             default: return mage.proto.SkillLevel.SKILL_LEVEL_UNSPECIFIED;
+        }
+    }
+
+    // ============================================================================
+    // MultiplayerAttackOption Conversions
+    // ============================================================================
+
+    public static mage.constants.MultiplayerAttackOption toMultiplayerAttackOption(mage.proto.MultiplayerAttackOption protoOption) {
+        switch (protoOption) {
+            case MULTIPLAYER_ATTACK_OPTION_MULTIPLE: return mage.constants.MultiplayerAttackOption.MULTIPLE;
+            case MULTIPLAYER_ATTACK_OPTION_LEFT: return mage.constants.MultiplayerAttackOption.LEFT;
+            case MULTIPLAYER_ATTACK_OPTION_RIGHT: return mage.constants.MultiplayerAttackOption.RIGHT;
+            default: return mage.constants.MultiplayerAttackOption.LEFT;
+        }
+    }
+
+    public static mage.proto.MultiplayerAttackOption toProtoMultiplayerAttackOption(mage.constants.MultiplayerAttackOption option) {
+        if (option == null) return mage.proto.MultiplayerAttackOption.MULTIPLAYER_ATTACK_OPTION_UNSPECIFIED;
+        switch (option) {
+            case MULTIPLE: return mage.proto.MultiplayerAttackOption.MULTIPLAYER_ATTACK_OPTION_MULTIPLE;
+            case LEFT: return mage.proto.MultiplayerAttackOption.MULTIPLAYER_ATTACK_OPTION_LEFT;
+            case RIGHT: return mage.proto.MultiplayerAttackOption.MULTIPLAYER_ATTACK_OPTION_RIGHT;
+            default: return mage.proto.MultiplayerAttackOption.MULTIPLAYER_ATTACK_OPTION_UNSPECIFIED;
+        }
+    }
+
+    // ============================================================================
+    // RangeOfInfluence Conversions
+    // ============================================================================
+
+    public static mage.constants.RangeOfInfluence toRangeOfInfluence(mage.proto.RangeOfInfluence protoRange) {
+        switch (protoRange) {
+            case RANGE_OF_INFLUENCE_ONE: return mage.constants.RangeOfInfluence.ONE;
+            case RANGE_OF_INFLUENCE_TWO: return mage.constants.RangeOfInfluence.TWO;
+            case RANGE_OF_INFLUENCE_ALL: return mage.constants.RangeOfInfluence.ALL;
+            default: return mage.constants.RangeOfInfluence.ALL;
+        }
+    }
+
+    public static mage.proto.RangeOfInfluence toProtoRangeOfInfluence(mage.constants.RangeOfInfluence range) {
+        if (range == null) return mage.proto.RangeOfInfluence.RANGE_OF_INFLUENCE_UNSPECIFIED;
+        switch (range) {
+            case ONE: return mage.proto.RangeOfInfluence.RANGE_OF_INFLUENCE_ONE;
+            case TWO: return mage.proto.RangeOfInfluence.RANGE_OF_INFLUENCE_TWO;
+            case ALL: return mage.proto.RangeOfInfluence.RANGE_OF_INFLUENCE_ALL;
+            default: return mage.proto.RangeOfInfluence.RANGE_OF_INFLUENCE_UNSPECIFIED;
+        }
+    }
+
+    // ============================================================================
+    // MatchTimeLimit Conversions
+    // ============================================================================
+
+    public static mage.constants.MatchTimeLimit toMatchTimeLimit(mage.proto.MatchTimeLimit protoLimit) {
+        switch (protoLimit) {
+            case MATCH_TIME_LIMIT_NONE: return mage.constants.MatchTimeLimit.NONE;
+            case MATCH_TIME_LIMIT_MIN_5: return mage.constants.MatchTimeLimit.MIN___5;
+            case MATCH_TIME_LIMIT_MIN_10: return mage.constants.MatchTimeLimit.MIN__10;
+            case MATCH_TIME_LIMIT_MIN_15: return mage.constants.MatchTimeLimit.MIN__15;
+            case MATCH_TIME_LIMIT_MIN_20: return mage.constants.MatchTimeLimit.MIN__20;
+            case MATCH_TIME_LIMIT_MIN_25: return mage.constants.MatchTimeLimit.MIN__25;
+            case MATCH_TIME_LIMIT_MIN_30: return mage.constants.MatchTimeLimit.MIN__30;
+            case MATCH_TIME_LIMIT_MIN_35: return mage.constants.MatchTimeLimit.MIN__35;
+            case MATCH_TIME_LIMIT_MIN_40: return mage.constants.MatchTimeLimit.MIN__40;
+            case MATCH_TIME_LIMIT_MIN_45: return mage.constants.MatchTimeLimit.MIN__45;
+            case MATCH_TIME_LIMIT_MIN_50: return mage.constants.MatchTimeLimit.MIN__50;
+            case MATCH_TIME_LIMIT_MIN_55: return mage.constants.MatchTimeLimit.MIN__55;
+            case MATCH_TIME_LIMIT_MIN_60: return mage.constants.MatchTimeLimit.MIN__60;
+            case MATCH_TIME_LIMIT_MIN_90: return mage.constants.MatchTimeLimit.MIN__90;
+            case MATCH_TIME_LIMIT_MIN_120: return mage.constants.MatchTimeLimit.MIN_120;
+            default: return mage.constants.MatchTimeLimit.NONE;
+        }
+    }
+
+    public static mage.proto.MatchTimeLimit toProtoMatchTimeLimit(mage.constants.MatchTimeLimit limit) {
+        if (limit == null) return mage.proto.MatchTimeLimit.MATCH_TIME_LIMIT_UNSPECIFIED;
+        switch (limit) {
+            case NONE: return mage.proto.MatchTimeLimit.MATCH_TIME_LIMIT_NONE;
+            case MIN___5: return mage.proto.MatchTimeLimit.MATCH_TIME_LIMIT_MIN_5;
+            case MIN__10: return mage.proto.MatchTimeLimit.MATCH_TIME_LIMIT_MIN_10;
+            case MIN__15: return mage.proto.MatchTimeLimit.MATCH_TIME_LIMIT_MIN_15;
+            case MIN__20: return mage.proto.MatchTimeLimit.MATCH_TIME_LIMIT_MIN_20;
+            case MIN__25: return mage.proto.MatchTimeLimit.MATCH_TIME_LIMIT_MIN_25;
+            case MIN__30: return mage.proto.MatchTimeLimit.MATCH_TIME_LIMIT_MIN_30;
+            case MIN__35: return mage.proto.MatchTimeLimit.MATCH_TIME_LIMIT_MIN_35;
+            case MIN__40: return mage.proto.MatchTimeLimit.MATCH_TIME_LIMIT_MIN_40;
+            case MIN__45: return mage.proto.MatchTimeLimit.MATCH_TIME_LIMIT_MIN_45;
+            case MIN__50: return mage.proto.MatchTimeLimit.MATCH_TIME_LIMIT_MIN_50;
+            case MIN__55: return mage.proto.MatchTimeLimit.MATCH_TIME_LIMIT_MIN_55;
+            case MIN__60: return mage.proto.MatchTimeLimit.MATCH_TIME_LIMIT_MIN_60;
+            case MIN__90: return mage.proto.MatchTimeLimit.MATCH_TIME_LIMIT_MIN_90;
+            case MIN_120: return mage.proto.MatchTimeLimit.MATCH_TIME_LIMIT_MIN_120;
+            default: return mage.proto.MatchTimeLimit.MATCH_TIME_LIMIT_UNSPECIFIED;
+        }
+    }
+
+    // ============================================================================
+    // MatchBufferTime Conversions
+    // ============================================================================
+
+    public static mage.constants.MatchBufferTime toMatchBufferTime(mage.proto.MatchBufferTime protoBuffer) {
+        switch (protoBuffer) {
+            case MATCH_BUFFER_TIME_NONE: return mage.constants.MatchBufferTime.NONE;
+            case MATCH_BUFFER_TIME_SEC_01: return mage.constants.MatchBufferTime.SEC__01;
+            case MATCH_BUFFER_TIME_SEC_02: return mage.constants.MatchBufferTime.SEC__02;
+            case MATCH_BUFFER_TIME_SEC_03: return mage.constants.MatchBufferTime.SEC__03;
+            case MATCH_BUFFER_TIME_SEC_05: return mage.constants.MatchBufferTime.SEC__05;
+            case MATCH_BUFFER_TIME_SEC_10: return mage.constants.MatchBufferTime.SEC__10;
+            case MATCH_BUFFER_TIME_SEC_15: return mage.constants.MatchBufferTime.SEC__15;
+            case MATCH_BUFFER_TIME_SEC_20: return mage.constants.MatchBufferTime.SEC__20;
+            case MATCH_BUFFER_TIME_SEC_25: return mage.constants.MatchBufferTime.SEC__25;
+            case MATCH_BUFFER_TIME_SEC_30: return mage.constants.MatchBufferTime.SEC__30;
+            default: return mage.constants.MatchBufferTime.NONE;
+        }
+    }
+
+    public static mage.proto.MatchBufferTime toProtoMatchBufferTime(mage.constants.MatchBufferTime buffer) {
+        if (buffer == null) return mage.proto.MatchBufferTime.MATCH_BUFFER_TIME_UNSPECIFIED;
+        switch (buffer) {
+            case NONE: return mage.proto.MatchBufferTime.MATCH_BUFFER_TIME_NONE;
+            case SEC__01: return mage.proto.MatchBufferTime.MATCH_BUFFER_TIME_SEC_01;
+            case SEC__02: return mage.proto.MatchBufferTime.MATCH_BUFFER_TIME_SEC_02;
+            case SEC__03: return mage.proto.MatchBufferTime.MATCH_BUFFER_TIME_SEC_03;
+            case SEC__05: return mage.proto.MatchBufferTime.MATCH_BUFFER_TIME_SEC_05;
+            case SEC__10: return mage.proto.MatchBufferTime.MATCH_BUFFER_TIME_SEC_10;
+            case SEC__15: return mage.proto.MatchBufferTime.MATCH_BUFFER_TIME_SEC_15;
+            case SEC__20: return mage.proto.MatchBufferTime.MATCH_BUFFER_TIME_SEC_20;
+            case SEC__25: return mage.proto.MatchBufferTime.MATCH_BUFFER_TIME_SEC_25;
+            case SEC__30: return mage.proto.MatchBufferTime.MATCH_BUFFER_TIME_SEC_30;
+            default: return mage.proto.MatchBufferTime.MATCH_BUFFER_TIME_UNSPECIFIED;
+        }
+    }
+
+    // ============================================================================
+    // MulliganType Conversions
+    // ============================================================================
+
+    public static mage.game.mulligan.MulliganType toMulliganType(mage.proto.MulliganType protoType) {
+        switch (protoType) {
+            case MULLIGAN_TYPE_GAME_DEFAULT: return mage.game.mulligan.MulliganType.GAME_DEFAULT;
+            case MULLIGAN_TYPE_VANCOUVER: return mage.game.mulligan.MulliganType.VANCOUVER;
+            case MULLIGAN_TYPE_PARIS: return mage.game.mulligan.MulliganType.PARIS;
+            case MULLIGAN_TYPE_LONDON: return mage.game.mulligan.MulliganType.LONDON;
+            case MULLIGAN_TYPE_SMOOTHED_LONDON: return mage.game.mulligan.MulliganType.SMOOTHED_LONDON;
+            case MULLIGAN_TYPE_CANADIAN_HIGHLANDER: return mage.game.mulligan.MulliganType.CANADIAN_HIGHLANDER;
+            default: return mage.game.mulligan.MulliganType.GAME_DEFAULT;
+        }
+    }
+
+    public static mage.proto.MulliganType toProtoMulliganType(mage.game.mulligan.MulliganType type) {
+        if (type == null) return mage.proto.MulliganType.MULLIGAN_TYPE_UNSPECIFIED;
+        switch (type) {
+            case GAME_DEFAULT: return mage.proto.MulliganType.MULLIGAN_TYPE_GAME_DEFAULT;
+            case VANCOUVER: return mage.proto.MulliganType.MULLIGAN_TYPE_VANCOUVER;
+            case PARIS: return mage.proto.MulliganType.MULLIGAN_TYPE_PARIS;
+            case LONDON: return mage.proto.MulliganType.MULLIGAN_TYPE_LONDON;
+            case SMOOTHED_LONDON: return mage.proto.MulliganType.MULLIGAN_TYPE_SMOOTHED_LONDON;
+            case CANADIAN_HIGHLANDER: return mage.proto.MulliganType.MULLIGAN_TYPE_CANADIAN_HIGHLANDER;
+            default: return mage.proto.MulliganType.MULLIGAN_TYPE_UNSPECIFIED;
         }
     }
 
@@ -790,6 +951,30 @@ public final class ProtoConverter {
     }
 
     // ============================================================================
+    // DeckCardInfo Conversions
+    // ============================================================================
+
+    public static mage.cards.decks.DeckCardInfo fromProtoDeckCardInfo(mage.proto.DeckCardInfoProto proto) {
+        if (proto == null) return null;
+        return new mage.cards.decks.DeckCardInfo(
+                proto.getCardName(),
+                proto.getCardNumber(),
+                proto.getSetCode(),
+                proto.getAmount() > 0 ? proto.getAmount() : 1
+        );
+    }
+
+    public static mage.proto.DeckCardInfoProto toProtoDeckCardInfo(mage.cards.decks.DeckCardInfo card) {
+        if (card == null) return mage.proto.DeckCardInfoProto.getDefaultInstance();
+        return mage.proto.DeckCardInfoProto.newBuilder()
+                .setCardName(card.getCardName() != null ? card.getCardName() : "")
+                .setSetCode(card.getSetCode() != null ? card.getSetCode() : "")
+                .setCardNumber(card.getCardNumber() != null ? card.getCardNumber() : "")
+                .setAmount(card.getAmount())
+                .build();
+    }
+
+    // ============================================================================
     // DeckCardLists Conversion
     // ============================================================================
 
@@ -797,15 +982,15 @@ public final class ProtoConverter {
         if (proto == null) return new DeckCardLists();
         DeckCardLists deck = new DeckCardLists();
         deck.setName(proto.getName());
-        // Cards are stored as simple strings in proto format "cardName|setCode|cardNum|quantity"
-        for (String cardStr : proto.getCardsList()) {
-            mage.cards.decks.DeckCardInfo cardInfo = parseDeckCardInfo(cardStr);
+        deck.setAuthor(proto.getAuthor());
+        for (mage.proto.DeckCardInfoProto cardProto : proto.getCardsList()) {
+            mage.cards.decks.DeckCardInfo cardInfo = fromProtoDeckCardInfo(cardProto);
             if (cardInfo != null) {
                 deck.getCards().add(cardInfo);
             }
         }
-        for (String cardStr : proto.getSideboardList()) {
-            mage.cards.decks.DeckCardInfo cardInfo = parseDeckCardInfo(cardStr);
+        for (mage.proto.DeckCardInfoProto cardProto : proto.getSideboardList()) {
+            mage.cards.decks.DeckCardInfo cardInfo = fromProtoDeckCardInfo(cardProto);
             if (cardInfo != null) {
                 deck.getSideboard().add(cardInfo);
             }
@@ -813,29 +998,16 @@ public final class ProtoConverter {
         return deck;
     }
 
-    /**
-     * Parses a card string in format "cardName|setCode|cardNum|quantity" into DeckCardInfo.
-     */
-    private static mage.cards.decks.DeckCardInfo parseDeckCardInfo(String cardStr) {
-        if (cardStr == null || cardStr.isEmpty()) return null;
-        String[] parts = cardStr.split("\\|");
-        if (parts.length < 3) return null;
-        String cardName = parts[0];
-        String setCode = parts[1];
-        String cardNumber = parts[2];
-        int quantity = parts.length > 3 ? Integer.parseInt(parts[3]) : 1;
-        return new mage.cards.decks.DeckCardInfo(cardName, cardNumber, setCode, quantity);
-    }
-
     public static mage.proto.DeckCardListsProto toProtoDeckCardLists(DeckCardLists deck) {
         if (deck == null) return mage.proto.DeckCardListsProto.getDefaultInstance();
         mage.proto.DeckCardListsProto.Builder builder = mage.proto.DeckCardListsProto.newBuilder()
-                .setName(deck.getName() != null ? deck.getName() : "");
+                .setName(deck.getName() != null ? deck.getName() : "")
+                .setAuthor(deck.getAuthor() != null ? deck.getAuthor() : "");
         for (mage.cards.decks.DeckCardInfo card : deck.getCards()) {
-            builder.addCards(card.toString());
+            builder.addCards(toProtoDeckCardInfo(card));
         }
         for (mage.cards.decks.DeckCardInfo card : deck.getSideboard()) {
-            builder.addSideboard(card.toString());
+            builder.addSideboard(toProtoDeckCardInfo(card));
         }
         return builder.build();
     }
@@ -928,16 +1100,235 @@ public final class ProtoConverter {
     // ============================================================================
 
     public static mage.proto.RoomUsersViewProto toProtoRoomUsersView(mage.view.RoomUsersView view) {
-        // Simplified - return default instance for now
-        // TODO: Implement proper conversion when proto schema is finalized
-        return mage.proto.RoomUsersViewProto.getDefaultInstance();
+        if (view == null) return mage.proto.RoomUsersViewProto.getDefaultInstance();
+        mage.proto.RoomUsersViewProto.Builder builder = mage.proto.RoomUsersViewProto.newBuilder()
+                .setNumberActiveGames(view.getNumberActiveGames())
+                .setNumberGameThreads(view.getNumberGameThreads())
+                .setNumberMaxGames(view.getNumberMaxGames());
+        if (view.getUsersView() != null) {
+            for (mage.view.UsersView user : view.getUsersView()) {
+                builder.addUsersView(toProtoUsersView(user));
+            }
+        }
+        return builder.build();
     }
 
     public static mage.proto.UsersViewProto toProtoUsersView(mage.view.UsersView view) {
         if (view == null) return mage.proto.UsersViewProto.getDefaultInstance();
-        // Simplified - only userName for now
         return mage.proto.UsersViewProto.newBuilder()
+                .setFlagName(view.getFlagName() != null ? view.getFlagName() : "")
                 .setUserName(view.getUserName() != null ? view.getUserName() : "")
+                .setMatchHistory(view.getMatchHistory() != null ? view.getMatchHistory() : "")
+                .setMatchQuitRatio(view.getMatchQuitRatio())
+                .setTourneyHistory(view.getTourneyHistory() != null ? view.getTourneyHistory() : "")
+                .setTourneyQuitRatio(view.getTourneyQuitRatio())
+                .setInfoGames(view.getInfoGames() != null ? view.getInfoGames() : "")
+                .setInfoPing(view.getInfoPing() != null ? view.getInfoPing() : "")
+                .setGeneralRating(view.getGeneralRating())
+                .setConstructedRating(view.getConstructedRating())
+                .setLimitedRating(view.getLimitedRating())
                 .build();
+    }
+
+    // ============================================================================
+    // MatchOptions Conversion
+    // ============================================================================
+
+    public static mage.game.match.MatchOptions fromProtoMatchOptions(mage.proto.MatchOptionsProto proto) {
+        if (proto == null) return null;
+        mage.game.match.MatchOptions options = new mage.game.match.MatchOptions(
+                proto.getName(),
+                proto.getGameType(),
+                proto.getMultiPlayer()
+        );
+        options.setAttackOption(toMultiplayerAttackOption(proto.getAttackOption()));
+        options.setRange(toRangeOfInfluence(proto.getRange()));
+        options.setWinsNeeded(proto.getWinsNeeded());
+        options.setFreeMulligans(proto.getFreeMulligans());
+        options.setCustomStartLifeEnabled(proto.getCustomStartLifeEnabled());
+        options.setCustomStartLife(proto.getCustomStartLife());
+        options.setCustomStartHandSizeEnabled(proto.getCustomStartHandSizeEnabled());
+        options.setCustomStartHandSize(proto.getCustomStartHandSize());
+        options.setDeckType(proto.getDeckType());
+        options.setLimited(proto.getLimited());
+        for (mage.proto.PlayerType pt : proto.getPlayerTypesList()) {
+            options.getPlayerTypes().add(toPlayerType(pt));
+        }
+        options.setPassword(proto.getPassword());
+        options.setSkillLevel(toSkillLevel(proto.getSkillLevel()));
+        options.setRollbackTurnsAllowed(proto.getRollbackTurnsAllowed());
+        options.setSpectatorsAllowed(proto.getSpectatorsAllowed());
+        options.setPlaneChase(proto.getPlaneChase());
+        options.setQuitRatio(proto.getQuitRatio());
+        options.setMinimumRating(proto.getMinimumRating());
+        options.setEdhPowerLevel(proto.getEdhPowerLevel());
+        options.setRated(proto.getRated());
+        options.setBannedUsers(new java.util.HashSet<>(proto.getBannedUsersList()));
+        options.setMatchTimeLimit(toMatchTimeLimit(proto.getMatchTimeLimit()));
+        options.setMatchBufferTime(toMatchBufferTime(proto.getMatchBufferTime()));
+        options.setMullgianType(toMulliganType(proto.getMulliganType()));
+        // Handle emblem cards
+        if (proto.getPerPlayerEmblemCardsCount() > 0) {
+            java.util.List<mage.cards.decks.DeckCardInfo> emblemCards = new java.util.ArrayList<>();
+            for (mage.proto.DeckCardInfoProto cardProto : proto.getPerPlayerEmblemCardsList()) {
+                emblemCards.add(fromProtoDeckCardInfo(cardProto));
+            }
+            options.setPerPlayerEmblemCards(emblemCards);
+        }
+        if (proto.getGlobalEmblemCardsCount() > 0) {
+            java.util.List<mage.cards.decks.DeckCardInfo> emblemCards = new java.util.ArrayList<>();
+            for (mage.proto.DeckCardInfoProto cardProto : proto.getGlobalEmblemCardsList()) {
+                emblemCards.add(fromProtoDeckCardInfo(cardProto));
+            }
+            options.setGlobalEmblemCards(emblemCards);
+        }
+        return options;
+    }
+
+    public static mage.proto.MatchOptionsProto toProtoMatchOptions(mage.game.match.MatchOptions options) {
+        if (options == null) return mage.proto.MatchOptionsProto.getDefaultInstance();
+        mage.proto.MatchOptionsProto.Builder builder = mage.proto.MatchOptionsProto.newBuilder()
+                .setName(options.getName() != null ? options.getName() : "")
+                .setAttackOption(toProtoMultiplayerAttackOption(options.getAttackOption()))
+                .setRange(toProtoRangeOfInfluence(options.getRange()))
+                .setWinsNeeded(options.getWinsNeeded())
+                .setFreeMulligans(options.getFreeMulligans())
+                .setCustomStartLifeEnabled(options.isCustomStartLifeEnabled())
+                .setCustomStartLife(options.getCustomStartLife())
+                .setCustomStartHandSizeEnabled(options.isCustomStartHandSizeEnabled())
+                .setCustomStartHandSize(options.getCustomStartHandSize())
+                .setGameType(options.getGameType() != null ? options.getGameType() : "")
+                .setDeckType(options.getDeckType() != null ? options.getDeckType() : "")
+                .setLimited(options.isLimited())
+                .setMultiPlayer(options.isSingleGameTourney())
+                .setPassword(options.getPassword() != null ? options.getPassword() : "")
+                .setSkillLevel(toProtoSkillLevel(options.getSkillLevel()))
+                .setRollbackTurnsAllowed(options.isRollbackTurnsAllowed())
+                .setSpectatorsAllowed(options.isSpectatorsAllowed())
+                .setPlaneChase(options.isPlaneChase())
+                .setQuitRatio(options.getQuitRatio())
+                .setMinimumRating(options.getMinimumRating())
+                .setEdhPowerLevel(options.getEdhPowerLevel())
+                .setRated(options.isRated())
+                .addAllBannedUsers(options.getBannedUsers())
+                .setMatchTimeLimit(toProtoMatchTimeLimit(options.getMatchTimeLimit()))
+                .setMatchBufferTime(toProtoMatchBufferTime(options.getMatchBufferTime()))
+                .setMulliganType(toProtoMulliganType(options.getMulliganType()));
+        for (PlayerType pt : options.getPlayerTypes()) {
+            builder.addPlayerTypes(toProtoPlayerType(pt));
+        }
+        if (options.getPerPlayerEmblemCards() != null) {
+            for (mage.cards.decks.DeckCardInfo card : options.getPerPlayerEmblemCards()) {
+                builder.addPerPlayerEmblemCards(toProtoDeckCardInfo(card));
+            }
+        }
+        if (options.getGlobalEmblemCards() != null) {
+            for (mage.cards.decks.DeckCardInfo card : options.getGlobalEmblemCards()) {
+                builder.addGlobalEmblemCards(toProtoDeckCardInfo(card));
+            }
+        }
+        return builder.build();
+    }
+
+    // ============================================================================
+    // LimitedOptions Conversion
+    // ============================================================================
+
+    public static mage.game.tournament.LimitedOptions fromProtoLimitedOptions(mage.proto.LimitedOptionsProto proto) {
+        if (proto == null) return null;
+        mage.game.tournament.LimitedOptions options = new mage.game.tournament.LimitedOptions();
+        options.getSetCodes().addAll(proto.getSetsList());
+        options.setConstructionTime(proto.getConstructionTime());
+        options.setDraftCubeName(proto.getDraftCubeName());
+        options.setNumberBoosters(proto.getNumberBoosters());
+        options.setIsRandom(proto.getIsRandom());
+        options.setIsReshuffled(proto.getIsReshuffled());
+        options.setIsRichMan(proto.getIsRichMan());
+        options.setJumpstartPacks(proto.getJumpstartPacks());
+        options.setIsJumpstart(proto.getIsJumpstart());
+        return options;
+    }
+
+    public static mage.proto.LimitedOptionsProto toProtoLimitedOptions(mage.game.tournament.LimitedOptions options) {
+        if (options == null) return mage.proto.LimitedOptionsProto.getDefaultInstance();
+        return mage.proto.LimitedOptionsProto.newBuilder()
+                .addAllSets(options.getSetCodes())
+                .setConstructionTime(options.getConstructionTime())
+                .setDraftCubeName(options.getDraftCubeName() != null ? options.getDraftCubeName() : "")
+                .setNumberBoosters(options.getNumberBoosters())
+                .setIsRandom(options.getIsRandom())
+                .setIsReshuffled(options.getIsReshuffled())
+                .setIsRichMan(options.getIsRichMan())
+                .setJumpstartPacks(options.getJumpstartPacks() != null ? options.getJumpstartPacks() : "")
+                .setIsJumpstart(options.getIsJumpstart())
+                .build();
+    }
+
+    // ============================================================================
+    // TournamentOptions Conversion
+    // ============================================================================
+
+    public static mage.game.tournament.TournamentOptions fromProtoTournamentOptions(mage.proto.TournamentOptionsProto proto) {
+        if (proto == null) return null;
+        mage.game.tournament.TournamentOptions options = new mage.game.tournament.TournamentOptions(
+                proto.getName(),
+                "", // matchType will be set from match_options
+                false // isSingleMultiplayerGame
+        );
+        options.setTournamentType(proto.getTournamentType());
+        for (mage.proto.PlayerType pt : proto.getPlayerTypesList()) {
+            options.getPlayerTypes().add(toPlayerType(pt));
+        }
+        // MatchOptions are handled separately - the TournamentOptions constructor creates default match options
+        // The match options fields should be applied from proto.getMatchOptions()
+        if (proto.hasMatchOptions()) {
+            mage.proto.MatchOptionsProto matchProto = proto.getMatchOptions();
+            options.getMatchOptions().setAttackOption(toMultiplayerAttackOption(matchProto.getAttackOption()));
+            options.getMatchOptions().setRange(toRangeOfInfluence(matchProto.getRange()));
+            options.getMatchOptions().setWinsNeeded(matchProto.getWinsNeeded());
+            options.getMatchOptions().setFreeMulligans(matchProto.getFreeMulligans());
+            options.getMatchOptions().setGameType(matchProto.getGameType());
+            options.getMatchOptions().setDeckType(matchProto.getDeckType());
+            options.getMatchOptions().setLimited(matchProto.getLimited());
+            options.getMatchOptions().setSkillLevel(toSkillLevel(matchProto.getSkillLevel()));
+            options.getMatchOptions().setRollbackTurnsAllowed(matchProto.getRollbackTurnsAllowed());
+            options.getMatchOptions().setSpectatorsAllowed(matchProto.getSpectatorsAllowed());
+            options.getMatchOptions().setMatchTimeLimit(toMatchTimeLimit(matchProto.getMatchTimeLimit()));
+            options.getMatchOptions().setMatchBufferTime(toMatchBufferTime(matchProto.getMatchBufferTime()));
+            options.getMatchOptions().setMullgianType(toMulliganType(matchProto.getMulliganType()));
+        }
+        if (proto.hasLimitedOptions()) {
+            options.setLimitedOptions(fromProtoLimitedOptions(proto.getLimitedOptions()));
+        }
+        options.setWatchingAllowed(proto.getWatchingAllowed());
+        options.setPlaneChase(proto.getPlaneChase());
+        options.setNumberRounds(proto.getNumberRounds());
+        options.setPassword(proto.getPassword());
+        options.setQuitRatio(proto.getQuitRatio());
+        options.setMinimumRating(proto.getMinimumRating());
+        return options;
+    }
+
+    public static mage.proto.TournamentOptionsProto toProtoTournamentOptions(mage.game.tournament.TournamentOptions options) {
+        if (options == null) return mage.proto.TournamentOptionsProto.getDefaultInstance();
+        mage.proto.TournamentOptionsProto.Builder builder = mage.proto.TournamentOptionsProto.newBuilder()
+                .setName(options.getName() != null ? options.getName() : "")
+                .setTournamentType(options.getTournamentType() != null ? options.getTournamentType() : "")
+                .setWatchingAllowed(options.isWatchingAllowed())
+                .setPlaneChase(options.isPlaneChase())
+                .setNumberRounds(options.getNumberRounds())
+                .setPassword(options.getPassword() != null ? options.getPassword() : "")
+                .setQuitRatio(options.getQuitRatio())
+                .setMinimumRating(options.getMinimumRating());
+        for (PlayerType pt : options.getPlayerTypes()) {
+            builder.addPlayerTypes(toProtoPlayerType(pt));
+        }
+        if (options.getMatchOptions() != null) {
+            builder.setMatchOptions(toProtoMatchOptions(options.getMatchOptions()));
+        }
+        if (options.getLimitedOptions() != null) {
+            builder.setLimitedOptions(toProtoLimitedOptions(options.getLimitedOptions()));
+        }
+        return builder.build();
     }
 }

@@ -188,18 +188,22 @@ message ConnectSetUserDataRequest {
 }
 
 message UserDataProto {
-  int32 avatar_id = 1;
-  int32 group_id = 2;
-  bool show_absent_mana = 3;
-  bool allow_request_show_hand_cards = 4;
-  bool confirm_empty_mana_pool = 5;
-  string user_skip_priority_steps = 6;
-  string flag_name = 7;
-  bool ask_move_to_grave_order = 8;
-  bool mana_auto_payment = 9;
-  bool pass_priority_auto_undo = 10;
-  bool show_own_cards_detailed = 11;
-  string user_target_ids = 12;
+  int32 group_id = 1;
+  int32 avatar_id = 2;
+  bool allow_request_show_hand_cards = 3;
+  bool confirm_empty_mana_pool = 4;
+  string user_skip_priority_steps = 5;  // UserSkipPrioritySteps serialized
+  string flag_name = 6;
+  bool ask_move_to_grave_order = 7;
+  bool mana_pool_automatic = 8;
+  bool mana_pool_automatic_restricted = 9;
+  bool pass_priority_cast = 10;
+  bool pass_priority_activation = 11;
+  bool auto_order_trigger = 12;
+  int32 auto_target_level = 13;
+  bool use_same_settings_for_replacement_effects = 14;
+  bool use_first_mana_ability = 15;
+  string user_id_str = 16;
 }
 
 message PingRequest {
@@ -253,25 +257,34 @@ message CreateTableRequest {
 
 message MatchOptionsProto {
   string name = 1;
-  string game_type = 2;
-  string deck_type = 3;
-  bool limited = 4;
-  bool rated = 5;
-  SkillLevel skill_level = 6;
-  int32 wins_needed = 7;
-  int32 free_mulligan = 8;
-  int32 player_range = 9;
-  int32 attack_option = 10;
-  string password = 11;
-  bool rollback_turns_allowed = 12;
-  bool spectators_allowed = 13;
-  bool planeChase = 14;
-  repeated string player_types = 15;
-  int32 num_seats = 16;
-  int32 quit_ratio = 17;
-  int32 minimum_rating = 18;
-  int32 edh_power_level = 19;
-  int32 priority_time = 20;
+  MultiplayerAttackOption attack_option = 2;
+  RangeOfInfluence range = 3;
+  int32 wins_needed = 4;
+  int32 free_mulligans = 5;
+  bool custom_start_life_enabled = 6;
+  int32 custom_start_life = 7;
+  bool custom_start_hand_size_enabled = 8;
+  int32 custom_start_hand_size = 9;
+  string game_type = 10;
+  string deck_type = 11;
+  bool limited = 12;
+  repeated PlayerType player_types = 13;
+  bool multi_player = 14;
+  string password = 15;
+  SkillLevel skill_level = 16;
+  bool rollback_turns_allowed = 17;
+  bool spectators_allowed = 18;
+  bool plane_chase = 19;
+  int32 quit_ratio = 20;
+  int32 minimum_rating = 21;
+  int32 edh_power_level = 22;
+  bool rated = 23;
+  repeated string banned_users = 24;
+  MatchTimeLimit match_time_limit = 25;
+  MatchBufferTime match_buffer_time = 26;
+  MulliganType mulligan_type = 27;
+  repeated DeckCardInfoProto per_player_emblem_cards = 28;
+  repeated DeckCardInfoProto global_emblem_cards = 29;
 }
 
 message CreateTournamentRequest {
@@ -283,17 +296,27 @@ message CreateTournamentRequest {
 message TournamentOptionsProto {
   string name = 1;
   string tournament_type = 2;
-  string deck_type = 3;
-  bool limited = 4;
-  bool rated = 5;
-  SkillLevel skill_level = 6;
-  int32 num_seats = 7;
-  repeated string sets = 8;
-  string match_options = 9;
-  string password = 10;
-  bool watch_allowed = 11;
-  int32 quit_ratio = 12;
-  int32 minimum_rating = 13;
+  repeated PlayerType player_types = 3;
+  MatchOptionsProto match_options = 4;
+  LimitedOptionsProto limited_options = 5;
+  bool watching_allowed = 6;
+  bool plane_chase = 7;
+  int32 number_rounds = 8;
+  string password = 9;
+  int32 quit_ratio = 10;
+  int32 minimum_rating = 11;
+}
+
+message LimitedOptionsProto {
+  repeated string sets = 1;
+  int32 construction_time = 2;
+  string draft_cube_name = 3;
+  int32 number_boosters = 4;
+  bool is_random = 5;
+  bool is_reshuffled = 6;
+  bool is_rich_man = 7;
+  string jumpstart_packs = 8;
+  bool is_jumpstart = 9;
 }
 
 message JoinTableRequest {
@@ -309,8 +332,16 @@ message JoinTableRequest {
 
 message DeckCardListsProto {
   string name = 1;
-  repeated string cards = 2;
-  repeated string sideboard = 3;
+  string author = 2;
+  repeated DeckCardInfoProto cards = 3;
+  repeated DeckCardInfoProto sideboard = 4;
+}
+
+message DeckCardInfoProto {
+  string card_name = 1;
+  string set_code = 2;
+  string card_number = 3;
+  int32 amount = 4;
 }
 
 message JoinTournamentRequest {
