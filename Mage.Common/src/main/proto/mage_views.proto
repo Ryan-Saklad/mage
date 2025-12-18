@@ -8,22 +8,17 @@ option java_multiple_files = true;
 
 import "mage_common.proto";
 
+// ============================================================================
+// COUNTER AND MANA VIEWS
+// ============================================================================
+
+// Matches mage.view.CounterView exactly
 message CounterViewProto {
   string name = 1;
   int32 count = 2;
 }
 
-message SimpleCardViewProto {
-  string id = 1;
-  string expansion_set_code = 2;
-  string card_number = 3;
-  bool uses_various_art = 4;
-  bool game_object = 5;
-  bool is_choosable = 6;
-  bool is_selected = 7;
-  PlayableObjectStats playable_stats = 8;
-}
-
+// Matches mage.view.ManaPoolView exactly
 message ManaPoolViewProto {
   int32 red = 1;
   int32 green = 2;
@@ -33,7 +28,25 @@ message ManaPoolViewProto {
   int32 colorless = 6;
 }
 
+// ============================================================================
+// CARD-RELATED VIEWS
+// ============================================================================
+
+// Matches mage.view.SimpleCardView exactly
+message SimpleCardViewProto {
+  string id = 1;  // UUID as string
+  string expansion_set_code = 2;
+  string card_number = 3;
+  bool uses_various_art = 4;
+  bool game_object = 5;
+  bool is_choosable = 6;
+  bool is_selected = 7;
+  PlayableObjectStats playable_stats = 8;
+}
+
+// Matches mage.view.CardView exactly (extends SimpleCardView)
 message CardViewProto {
+  // From SimpleCardView
   string id = 1;
   string expansion_set_code = 2;
   string card_number = 3;
@@ -43,113 +56,206 @@ message CardViewProto {
   bool is_selected = 7;
   PlayableObjectStats playable_stats = 8;
 
-  string parent_id = 10;
-  string name = 11;
-  string display_name = 12;
-  string display_full_name = 13;
-  repeated string rules = 14;
-  string power = 15;
-  string toughness = 16;
-  string loyalty = 17;
-  string defense = 18;
-  string starting_loyalty = 19;
-  string starting_defense = 20;
-
-  repeated CardType card_types = 21;
-  repeated string sub_types = 22;
-  repeated SuperType super_types = 23;
-  ObjectColor color = 24;
-  ObjectColor frame_color = 25;
-  FrameStyle frame_style = 26;
-
-  repeated string mana_cost_left_str = 27;
-  repeated string mana_cost_right_str = 28;
-  int32 mana_value = 29;
-  Rarity rarity = 30;
-
-  MageObjectType mage_object_type = 31;
-  bool is_ability = 32;
-  AbilityType ability_type = 33;
-  bool is_token = 34;
-
-  CardViewProto ability = 35;
-  string image_file_name = 36;
-  int32 image_number = 37;
-
-  bool extra_deck_card = 38;
-  bool transformable = 39;
-  CardViewProto second_card_face = 40;
-  bool transformed = 41;
-
-  bool flip_card = 42;
-  bool face_down = 43;
-  string alternate_name = 44;
-
-  bool is_split_card = 45;
-  string left_split_name = 46;
-  string left_split_costs_str = 47;
-  repeated string left_split_rules = 48;
-  string left_split_type_line = 49;
-  string right_split_name = 50;
-  string right_split_costs_str = 51;
-  repeated string right_split_rules = 52;
-  string right_split_type_line = 53;
-
-  bool is_double_faced_card = 54;
-  ArtRect art_rect = 55;
-
-  repeated string targets = 56;
-  string paired_card = 57;
-  repeated string banded_cards = 58;
-  bool paid = 59;
-  repeated CounterViewProto counters = 60;
-
-  bool controlled_by_owner = 61;
-  Zone zone = 62;
-  bool rotate = 63;
-  bool hide_info = 64;
-
-  bool can_attack = 65;
-  bool can_block = 66;
-  bool in_viewer_only = 67;
-  repeated CardIcon card_icons = 68;
-
-  int32 original_power = 69;
-  int32 original_toughness = 70;
-  string original_color_identity = 71;
-  bool original_is_copy = 72;
+  // CardView specific fields
+  string parent_id = 9;
+  string name = 10;
+  string display_name = 11;
+  string display_full_name = 12;
+  repeated string rules = 13;
+  string power = 14;
+  string toughness = 15;
+  string loyalty = 16;
+  string defense = 17;
+  string starting_loyalty = 18;
+  string starting_defense = 19;
+  repeated CardType card_types = 20;
+  repeated string sub_types = 21;  // SubTypes converted to strings
+  repeated SuperType super_types = 22;
+  ObjectColor color = 23;
+  ObjectColor frame_color = 24;
+  FrameStyle frame_style = 25;
+  repeated string mana_cost_left_str = 26;
+  repeated string mana_cost_right_str = 27;
+  int32 mana_value = 28;
+  Rarity rarity = 29;
+  MageObjectType mage_object_type = 30;
+  bool is_ability = 31;
+  AbilityType ability_type = 32;
+  bool is_token = 33;
+  CardViewProto ability = 34;  // nested CardView
+  string image_file_name = 35;
+  int32 image_number = 36;
+  bool extra_deck_card = 37;
+  bool transformable = 38;
+  CardViewProto second_card_face = 39;
+  bool transformed = 40;
+  bool flip_card = 41;
+  bool face_down = 42;
+  string alternate_name = 43;
+  bool is_split_card = 44;
+  string left_split_name = 45;
+  string left_split_costs_str = 46;
+  repeated string left_split_rules = 47;
+  string left_split_type_line = 48;
+  string right_split_name = 49;
+  string right_split_costs_str = 50;
+  repeated string right_split_rules = 51;
+  string right_split_type_line = 52;
+  bool is_double_faced_card = 53;
+  ArtRect art_rect = 54;
+  repeated string targets = 55;  // List<UUID> as strings
+  string paired_card = 56;  // UUID as string
+  repeated string banded_cards = 57;  // List<UUID> as strings
+  bool paid = 58;
+  repeated CounterViewProto counters = 59;
+  bool controlled_by_owner = 60;
+  Zone zone = 61;
+  bool rotate = 62;
+  bool hide_info = 63;
+  bool can_attack = 64;
+  bool can_block = 65;
+  bool in_viewer_only = 66;
+  repeated CardIcon card_icons = 67;
+  string original_power = 68;  // MageInt value as string
+  string original_toughness = 69;  // MageInt value as string
+  string original_color_identity = 70;
+  bool original_is_copy = 71;
 }
 
+// Matches mage.view.CardsView (LinkedHashMap<UUID, CardView>)
+message CardsViewProto {
+  map<string, CardViewProto> cards = 1;  // UUID string -> CardView
+}
+
+// Matches mage.view.SimpleCardsView (LinkedHashMap<UUID, SimpleCardView>)
+message SimpleCardsViewProto {
+  map<string, SimpleCardViewProto> cards = 1;  // UUID string -> SimpleCardView
+}
+
+// Matches mage.view.PermanentView exactly (extends CardView)
 message PermanentViewProto {
-  CardViewProto card = 1;
+  CardViewProto card = 1;  // embedded CardView fields
+
+  // PermanentView specific fields
   bool tapped = 2;
   bool flipped = 3;
   bool phased_in = 4;
-  bool summon_sick = 5;
+  bool summoning_sickness = 5;
   int32 damage = 6;
-  repeated string abilities = 7;
-  bool controlled = 8;
-  string controller_name = 9;
-  string controller_id = 10;
+  repeated string attachments = 7;  // List<UUID> as strings
+  CardViewProto original = 8;
+  bool copy = 9;
+  string name_owner = 10;
+  string name_controller = 11;
+  bool controlled = 12;
+  string attached_to = 13;  // UUID as string
+  bool morphed = 14;
+  bool disguised = 15;
+  bool manifested = 16;
+  bool cloaked = 17;
+  bool attached_to_permanent = 18;
+  bool attached_controller_differs = 19;
 }
 
-message CardsViewProto {
-  map<string, CardViewProto> cards = 1;
+// ============================================================================
+// ZONE VIEWS
+// ============================================================================
+
+// Matches mage.view.ExileView (extends CardsView)
+message ExileViewProto {
+  string id = 1;  // UUID as string
+  string name = 2;
+  map<string, CardViewProto> cards = 3;  // inherited from CardsView
 }
 
-message SimpleCardsViewProto {
-  map<string, SimpleCardViewProto> cards = 1;
+// Matches mage.view.RevealedView exactly
+message RevealedViewProto {
+  string name = 1;
+  CardsViewProto cards = 2;
 }
 
-message StackAbilityViewProto {
-  CardViewProto card = 1;
-  string ability_name = 2;
-  repeated string rules = 3;
-  CardViewProto source_card = 4;
+// Matches mage.view.LookedAtView exactly
+message LookedAtViewProto {
+  string name = 1;
+  SimpleCardsViewProto cards = 2;
 }
 
+// Matches mage.view.CombatGroupView exactly
+message CombatGroupViewProto {
+  CardsViewProto attackers = 1;
+  CardsViewProto blockers = 2;
+  bool is_blocked = 3;
+  string defender_name = 4;
+  string defender_id = 5;  // UUID as string
+}
+
+// ============================================================================
+// COMMAND OBJECT VIEWS
+// ============================================================================
+
+// Matches mage.view.EmblemView exactly
+message EmblemViewProto {
+  string id = 1;
+  string name = 2;
+  string card_number = 3;
+  string image_file_name = 4;
+  int32 image_number = 5;
+  bool uses_various_art = 6;
+  string expansion_set_code = 7;
+  repeated string rules = 8;
+  PlayableObjectStats playable_stats = 9;
+  bool is_choosable = 10;
+  bool is_selected = 11;
+}
+
+// Matches mage.view.DungeonView exactly
+message DungeonViewProto {
+  string id = 1;
+  string name = 2;
+  string image_file_name = 3;
+  int32 image_number = 4;
+  string expansion_set_code = 5;
+  repeated string rules = 6;
+  PlayableObjectStats playable_stats = 7;
+  bool is_choosable = 8;
+  bool is_selected = 9;
+}
+
+// Matches mage.view.PlaneView exactly
+message PlaneViewProto {
+  string id = 1;
+  string name = 2;
+  string image_file_name = 3;
+  int32 image_number = 4;
+  string expansion_set_code = 5;
+  repeated string rules = 6;
+  PlayableObjectStats playable_stats = 7;
+  bool is_choosable = 8;
+  bool is_selected = 9;
+}
+
+// Matches mage.view.CommanderView (extends CardView)
+message CommanderViewProto {
+  CardViewProto card = 1;  // inherits from CardView
+}
+
+// Union type for CommandObjectView implementations
+message CommandObjectViewProto {
+  oneof command_object {
+    EmblemViewProto emblem = 1;
+    DungeonViewProto dungeon = 2;
+    PlaneViewProto plane = 3;
+    CommanderViewProto commander = 4;
+  }
+}
+
+// ============================================================================
+// PLAYER AND GAME VIEWS
+// ============================================================================
+
+// Matches mage.view.PlayerView exactly
 message PlayerViewProto {
-  string player_id = 1;
+  string player_id = 1;  // UUID as string
   string name = 2;
   bool controlled = 3;
   bool is_human = 4;
@@ -168,13 +274,13 @@ message PlayerViewProto {
   CardsViewProto exile = 17;
   CardsViewProto sideboard = 18;
   CardsViewProto helper_cards = 19;
-  map<string, PermanentViewProto> battlefield = 20;
-  CardViewProto top_card = 21;
+  map<string, PermanentViewProto> battlefield = 20;  // UUID string -> PermanentView
+  CardViewProto top_card = 21;  // nullable
   UserDataViewProto user_data = 22;
   repeated CommandObjectViewProto command_list = 23;
-  repeated string attachments = 24;
+  repeated string attachments = 24;  // List<UUID> as strings
   int32 states_saved_size = 25;
-  int64 priority_time_saved_ms = 26;
+  int64 priority_time_saved_time_ms = 26;
   int32 priority_time_left_secs = 27;
   int32 buffer_time_left = 28;
   bool passed_turn = 29;
@@ -188,284 +294,272 @@ message PlayerViewProto {
   repeated string designation_names = 37;
 }
 
-message CombatGroupViewProto {
-  repeated string attackers = 1;
-  repeated string blockers = 2;
-  repeated string blocked_by_blockers = 3;
-  string attacked_id = 4;
-  bool attacked_player = 5;
-}
-
-message ExileViewProto {
-  string id = 1;
-  string name = 2;
-  CardsViewProto cards = 3;
-}
-
-message RevealedViewProto {
-  string name = 1;
-  CardsViewProto cards = 2;
-}
-
-message LookedAtViewProto {
-  string name = 1;
-  SimpleCardsViewProto cards = 2;
-}
-
+// Matches mage.view.GameView exactly
 message GameViewProto {
   int32 priority_time = 1;
   int32 buffer_time = 2;
   repeated PlayerViewProto players = 3;
-  string my_player_id = 4;
+  string my_player_id = 4;  // UUID as string, nullable
   CardsViewProto my_hand = 5;
   CardsViewProto my_helper_emblems = 6;
-  map<string, SimpleCardsViewProto> opponent_hands = 7;
-  map<string, SimpleCardsViewProto> watched_hands = 8;
-  CardsViewProto stack = 9;
-  repeated ExileViewProto exiles = 10;
-  repeated RevealedViewProto revealed = 11;
-  repeated LookedAtViewProto looked_at = 12;
-  repeated RevealedViewProto companion = 13;
-  repeated CombatGroupViewProto combat = 14;
-  string phase = 15;
-  string step = 16;
-  string active_player_id = 17;
-  string active_player_name = 18;
-  string priority_player_name = 19;
-  int32 turn = 20;
-  bool special = 21;
-  bool rollback_turns_allowed = 22;
-  int32 total_errors_count = 23;
-  int32 total_effects_count = 24;
-  int32 game_cycle = 25;
+  // PlayableObjectsList canPlayObjects - complex type, represented as list of playable IDs
+  repeated string can_play_object_ids = 7;
+  map<string, SimpleCardsViewProto> opponent_hands = 8;
+  map<string, SimpleCardsViewProto> watched_hands = 9;
+  CardsViewProto stack = 10;
+  repeated ExileViewProto exiles = 11;
+  repeated RevealedViewProto revealed = 12;
+  repeated LookedAtViewProto looked_at = 13;
+  repeated RevealedViewProto companion = 14;
+  repeated CombatGroupViewProto combat = 15;
+  string phase = 16;  // TurnPhase as string
+  PhaseStep step = 17;
+  string active_player_id = 18;  // UUID as string
+  string active_player_name = 19;
+  string priority_player_name = 20;
+  int32 turn = 21;
+  bool special = 22;
+  bool rollback_turns_allowed = 23;
+  int32 total_errors_count = 24;
+  int32 total_effects_count = 25;
+  int32 game_cycle = 26;
 }
 
+// Matches mage.view.GameEndView exactly
 message GameEndViewProto {
-  string game_id = 1;
-  repeated string winners = 2;
-  repeated string losers = 3;
-  string game_info = 4;
-  int32 life = 5;
-  bool you_won = 6;
-  repeated GameEndViewPlayerResultProto player_results = 7;
+  PlayerViewProto client_player = 1;
+  repeated PlayerViewProto players = 2;
+  int64 start_time = 3;  // Date as millis
+  int64 end_time = 4;
+  string game_info = 5;
+  string match_info = 6;
+  string additional_info = 7;
+  bool won = 8;
+  MatchViewProto match_view = 9;
+  int32 wins = 10;
+  int32 loses = 11;
+  int32 wins_needed = 12;
 }
 
-message GameEndViewPlayerResultProto {
-  string player_name = 1;
-  int32 life = 2;
-  bool is_winner = 3;
-}
+// ============================================================================
+// TABLE AND SEAT VIEWS
+// ============================================================================
 
-message CommandObjectViewProto {
-  string id = 1;
-  string name = 2;
-  string expansion_set_code = 3;
-  string card_number = 4;
-  repeated string rules = 5;
-  string image_file_name = 6;
-  int32 image_number = 7;
-
-  oneof command_type {
-    EmblemViewProto emblem = 10;
-    DungeonViewProto dungeon = 11;
-    PlaneViewProto plane = 12;
-    CommanderViewProto commander = 13;
-  }
-}
-
-message EmblemViewProto {
-  string id = 1;
-  string name = 2;
-  string source_name = 3;
-  string expansion_set_code = 4;
-  string card_number = 5;
-  repeated string rules = 6;
-}
-
-message DungeonViewProto {
-  string id = 1;
-  string name = 2;
-  string expansion_set_code = 3;
-  string card_number = 4;
-  repeated string rules = 5;
-  string current_room = 6;
-}
-
-message PlaneViewProto {
-  string id = 1;
-  string name = 2;
-  string expansion_set_code = 3;
-  string card_number = 4;
-  repeated string rules = 5;
-  string controller_id = 6;
-}
-
-message CommanderViewProto {
-  CardViewProto card = 1;
-  int32 commander_damage = 2;
-}
-
-message TableViewProto {
-  string table_id = 1;
-  string game_type = 2;
-  string controller_name = 3;
-  string deck_type = 4;
-  string additional_info = 5;
-  string table_state = 6;
-  int64 create_time = 7;
-  int64 start_time = 8;
-  int64 end_time = 9;
-  bool is_tourney = 10;
-  string tourney_type = 11;
-  repeated SeatViewProto seats = 12;
-  bool joinable = 13;
-  bool watchable = 14;
-  bool limited = 15;
-  bool rated = 16;
-  string password_status = 17;
-  SkillLevel skill_level = 18;
-  bool quit_ratio = 19;
-  int32 minimum_rating = 20;
-  string game_id = 21;
-}
-
+// Matches mage.view.SeatView exactly
 message SeatViewProto {
-  int32 seat_number = 1;
-  string player_name = 2;
-  string player_type = 3;
-  bool is_empty = 4;
+  string flag_name = 1;
+  string player_id = 2;  // UUID as string
+  string player_name = 3;
+  PlayerType player_type = 4;
+  string history = 5;
+  int32 general_rating = 6;
+  int32 constructed_rating = 7;
+  int32 limited_rating = 8;
 }
 
-message MatchViewProto {
-  string match_id = 1;
-  string match_name = 2;
-  string game_type = 3;
-  string deck_type = 4;
-  repeated string players = 5;
-  string result = 6;
-  int64 start_time = 7;
-  int64 end_time = 8;
-  bool rated = 9;
+// Matches mage.view.TableView exactly
+message TableViewProto {
+  string table_id = 1;  // UUID as string
+  string game_type = 2;
+  string deck_type = 3;
+  string table_name = 4;
+  string controller_name = 5;
+  string additional_info_short = 6;
+  string additional_info_full = 7;
+  int64 create_time = 8;  // Date as millis
+  TableState table_state = 9;
   SkillLevel skill_level = 10;
-  int32 wins_needed = 11;
-  repeated MatchPlayerViewProto match_players = 12;
+  string table_state_text = 11;
+  string seats_info = 12;
+  bool is_tournament = 13;
+  repeated SeatViewProto seats = 14;
+  repeated string games = 15;  // List<UUID> as strings
+  string quit_ratio = 16;
+  string minimum_rating = 17;
+  bool limited = 18;
+  bool rated = 19;
+  bool passworded = 20;
+  bool spectators_allowed = 21;
 }
 
-message MatchPlayerViewProto {
+// ============================================================================
+// MATCH VIEWS
+// ============================================================================
+
+// Matches mage.view.MatchView exactly
+message MatchViewProto {
+  string table_id = 1;  // UUID as string
+  string match_id = 2;
+  string match_name = 3;
+  string game_type = 4;
+  string deck_type = 5;
+  repeated string games = 6;  // List<UUID> as strings
+  string result = 7;
+  string players = 8;
+  int64 start_time = 9;  // Date as millis
+  int64 end_time = 10;
+  bool replay_available = 11;
+  bool is_tournament = 12;
+  bool rated = 13;
+}
+
+// ============================================================================
+// TOURNAMENT VIEWS
+// ============================================================================
+
+// Matches mage.view.TournamentPlayerView exactly
+message TournamentPlayerViewProto {
+  string flag_name = 1;
+  string name = 2;
+  string state = 3;
+  string results = 4;
+  string history = 5;
+  int32 points = 6;
+  bool quit = 7;
+}
+
+// Matches mage.view.TournamentGameView exactly
+message TournamentGameViewProto {
+  int32 round_num = 1;
+  string match_id = 2;  // UUID as string
+  string game_id = 3;
+  string state = 4;
+  string result = 5;
+  string players = 6;
+  string table_id = 7;
+}
+
+// Matches mage.view.RoundView exactly
+message RoundViewProto {
+  repeated TournamentGameViewProto games = 1;
+}
+
+// Matches mage.view.TournamentView exactly
+message TournamentViewProto {
+  string tournament_name = 1;
+  string tournament_type = 2;
+  string tournament_state = 3;
+  int64 start_time = 4;  // Date as millis
+  int64 end_time = 5;
+  int64 step_start_time = 6;
+  int64 server_time = 7;
+  int32 construction_time = 8;
+  bool watching_allowed = 9;
+  repeated RoundViewProto rounds = 10;
+  repeated TournamentPlayerViewProto players = 11;
+  string running_info = 12;
+}
+
+// ============================================================================
+// DRAFT VIEWS
+// ============================================================================
+
+// Matches mage.view.DraftView exactly
+message DraftViewProto {
+  repeated string set_names = 1;
+  repeated string set_codes = 2;
+  int32 booster_num = 3;
+  int32 card_num = 4;
+  bool is_cube = 5;
+  repeated string players = 6;
+}
+
+// Matches mage.view.DraftPickView exactly
+message DraftPickViewProto {
+  SimpleCardsViewProto booster = 1;
+  SimpleCardsViewProto picks = 2;
+  bool picking = 3;
+  int32 timeout = 4;
+}
+
+// Matches mage.view.DeckView exactly
+message DeckViewProto {
   string name = 1;
-  int32 wins = 2;
-  string quit_status = 3;
+  SimpleCardsViewProto cards = 2;
+  SimpleCardsViewProto sideboard = 3;
 }
 
-message RoomUsersViewProto {
-  string room_id = 1;
-  repeated UserViewProto users = 2;
-}
+// ============================================================================
+// USER VIEWS
+// ============================================================================
 
+// Matches mage.view.UserView exactly
 message UserViewProto {
   string user_name = 1;
   string host = 2;
   string session_id = 3;
-  int64 time_connected = 4;
+  int64 time_connected = 4;  // Date as millis
   int64 last_activity = 5;
   string game_info = 6;
   string user_state = 7;
-  int64 mute_chat_until = 8;
+  int64 mute_chat_until = 8;  // Date as millis
   string client_version = 9;
   string email = 10;
   string user_id_str = 11;
 }
 
+// Matches mage.view.UsersView exactly
 message UsersViewProto {
-  repeated UserViewProto users = 1;
+  string flag_name = 1;
+  string user_name = 2;
+  string match_history = 3;
+  int32 match_quit_ratio = 4;
+  string tourney_history = 5;
+  int32 tourney_quit_ratio = 6;
+  string info_games = 7;
+  string info_ping = 8;
+  int32 general_rating = 9;
+  int32 constructed_rating = 10;
+  int32 limited_rating = 11;
 }
 
+// Matches mage.view.UserDataView exactly
 message UserDataViewProto {
-  string avatar_id = 1;
-  int32 group_id = 2;
-  bool show_absent_mana = 3;
-  string flag_name = 4;
-  bool use_premium_themes = 5;
-  repeated string additional_data = 6;
+  int32 avatar_id = 1;
+  int32 user_group = 2;
+  bool confirm_empty_mana_pool = 3;
+  string user_skip_priority_steps = 4;  // UserSkipPrioritySteps as string
+  string flag_name = 5;
+  bool ask_move_to_grave_order = 6;
 }
 
-message TournamentViewProto {
-  string tournament_id = 1;
-  string tournament_name = 2;
-  string tournament_type = 3;
-  string tournament_state = 4;
-  int32 round_number = 5;
-  repeated TournamentPlayerViewProto players = 6;
-  repeated RoundViewProto rounds = 7;
-  int64 start_time = 8;
-  int64 end_time = 9;
-  bool running = 10;
-  string booster_info = 11;
+// Matches mage.view.RoomUsersView exactly
+message RoomUsersViewProto {
+  int32 number_active_games = 1;
+  int32 number_game_threads = 2;
+  int32 number_max_games = 3;
+  repeated UsersViewProto users_view = 4;
 }
 
-message TournamentPlayerViewProto {
-  string player_id = 1;
-  string name = 2;
-  string state = 3;
-  string results = 4;
-  int32 points = 5;
-  bool eliminated = 6;
-  bool quit = 7;
-  string player_type = 8;
-  bool disconnected = 9;
+// ============================================================================
+// ABILITY VIEWS
+// ============================================================================
+
+// Matches mage.view.AbilityView (extends CardView)
+message AbilityViewProto {
+  CardViewProto card = 1;  // inherited CardView fields
+  string source_name = 2;
+  CardViewProto source_card = 3;
 }
 
-message TournamentGameViewProto {
-  string game_id = 1;
-  string table_id = 2;
-  string state = 3;
-  repeated string players = 4;
-  string result = 5;
+// Matches mage.view.StackAbilityView (extends CardView)
+message StackAbilityViewProto {
+  CardViewProto card = 1;  // inherited CardView fields
+  CardViewProto source_card = 2;
 }
 
-message RoundViewProto {
-  int32 round_number = 1;
-  repeated TournamentGameViewProto games = 2;
+// Matches mage.view.AbilityPickerView exactly
+message AbilityPickerViewProto {
+  map<string, string> choices = 1;  // UUID string -> description
+  string message = 2;
+  GameViewProto game_view = 3;
 }
 
-message TournamentTypeViewProto {
-  string name = 1;
-  int32 min_players = 2;
-  int32 max_players = 3;
-  int32 num_boosters = 4;
-  bool draft = 5;
-  bool limited = 6;
-  bool cubed = 7;
-  bool elimination = 8;
-  bool random = 9;
-  bool rich_man = 10;
-  bool jumpstart = 11;
-}
+// ============================================================================
+// TYPE VIEWS
+// ============================================================================
 
-message DraftViewProto {
-  string draft_id = 1;
-  CardsViewProto picks = 2;
-  CardsViewProto booster = 3;
-  int32 card_count = 4;
-  int32 booster_number = 5;
-  int32 card_number = 6;
-  int32 timeout = 7;
-  string marked_card = 8;
-}
-
-message DraftPickViewProto {
-  CardsViewProto booster = 1;
-  CardsViewProto picks = 2;
-  int32 timeout = 3;
-  string marked_card = 4;
-}
-
-message DeckViewProto {
-  string name = 1;
-  CardsViewProto main_deck = 2;
-  CardsViewProto sideboard = 3;
-}
-
+// Matches mage.view.GameTypeView exactly
 message GameTypeViewProto {
   string name = 1;
   int32 min_players = 2;
@@ -476,60 +570,87 @@ message GameTypeViewProto {
   bool use_attack_option = 7;
 }
 
-message AbilityPickerViewProto {
-  repeated AbilityViewProto choices = 1;
-  bool optional = 2;
-  string message = 3;
+// Matches mage.view.TournamentTypeView exactly
+message TournamentTypeViewProto {
+  string name = 1;
+  int32 min_players = 2;
+  int32 max_players = 3;
+  int32 num_boosters = 4;
+  bool draft = 5;
+  bool limited = 6;
+  bool cube_booster = 7;
+  bool elimination = 8;
+  bool random = 9;
+  bool reshuffled = 10;
+  bool rich_man = 11;
+  bool jumpstart = 12;
 }
 
-message AbilityViewProto {
-  string id = 1;
-  string name = 2;
-  string rule = 3;
-  string mana_cost = 4;
-  CardViewProto source_card = 5;
-}
+// ============================================================================
+// CLIENT MESSAGE VIEWS
+// ============================================================================
 
-message GameClientMessageProto {
-  GameViewProto game_view = 1;
-  CardsViewProto cards = 2;
-  CardsViewProto cards2 = 3;
-  string message = 4;
-  bool options_flag = 5;
-  repeated string options = 6;
-  int32 min = 7;
-  int32 max = 8;
-  map<string, string> choices = 9;
-}
-
-message TableClientMessageProto {
-  string table_id = 1;
-  DeckViewProto deck = 2;
-  int32 time = 3;
-  bool limited = 4;
-}
-
-message DraftClientMessageProto {
-  DraftViewProto draft_view = 1;
-  int32 timeout = 2;
-}
-
-message UserRequestMessageProto {
-  string title = 1;
-  string message = 2;
-  string button1_text = 3;
-  string button2_text = 4;
-  string type = 5;
-  string user_name = 6;
-  string matched_id = 7;
-}
-
+// Matches mage.view.ChatMessage exactly
 message ChatMessageProto {
   string username = 1;
-  int64 time = 2;
+  int64 time = 2;  // Date as millis
   string turn_info = 3;
   string message = 4;
   MessageColor color = 5;
   SoundToPlay sound_to_play = 6;
   MessageType message_type = 7;
+}
+
+// Matches mage.view.UserRequestMessage exactly
+message UserRequestMessageProto {
+  string title = 1;
+  string message = 2;
+  double window_size_ratio = 3;
+  string related_user_id = 4;  // UUID as string
+  string related_user_name = 5;
+  string match_id = 6;
+  string tournament_id = 7;
+  string game_id = 8;
+  string room_id = 9;
+  string table_id = 10;
+  string button1_text = 11;
+  PlayerAction button1_action = 12;
+  string button2_text = 13;
+  PlayerAction button2_action = 14;
+  string button3_text = 15;
+  PlayerAction button3_action = 16;
+}
+
+// Matches mage.view.GameClientMessage exactly
+message GameClientMessageProto {
+  GameViewProto game_view = 1;
+  CardsViewProto cards_view1 = 2;
+  CardsViewProto cards_view2 = 3;
+  string message = 4;
+  bool flag = 5;
+  repeated string targets = 6;  // Set<UUID> as strings
+  int32 min = 7;
+  int32 max = 8;
+  map<string, string> options = 9;  // simplified, actual is Map<String, Serializable>
+  string choice_message = 10;  // Choice simplified
+  repeated string choice_choices = 11;
+  repeated string multi_amount_messages = 12;  // simplified from List<MultiAmountMessage>
+}
+
+// Matches mage.view.TableClientMessage exactly
+message TableClientMessageProto {
+  DeckViewProto deck = 1;
+  string room_id = 2;
+  string current_table_id = 3;
+  string parent_table_id = 4;
+  string game_id = 5;
+  string player_id = 6;
+  int32 time = 7;
+  bool flag = 8;
+}
+
+// Matches mage.view.DraftClientMessage exactly
+message DraftClientMessageProto {
+  DraftViewProto draft_view = 1;
+  DraftPickViewProto draft_pick_view = 2;
 }
