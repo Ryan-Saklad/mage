@@ -38,40 +38,60 @@ public final class ProtoConverter {
                 proto.getMajor(),
                 proto.getMinor(),
                 proto.getRelease(),
-                proto.getReleaseInfo()
+                proto.getReleaseInfo(),
+                ProtoConverter.class
         );
     }
 
     public static mage.proto.MageVersion toProtoVersion(mage.utils.MageVersion version) {
         if (version == null) return mage.proto.MageVersion.getDefaultInstance();
+        // MageVersion stores private fields without getters, so we parse from toString
+        // Format: "1.4.58-V1" or "1.4.58-V1 (build: time)"
+        String versionStr = version.toString(false);
+        String[] parts = versionStr.split("-");
+        String[] numbers = parts[0].split("\\.");
+        String releaseInfo = parts.length > 1 ? parts[1] : "";
+
         return mage.proto.MageVersion.newBuilder()
-                .setMajor(version.getMajor())
-                .setMinor(version.getMinor())
-                .setRelease(version.getRelease())
-                .setReleaseInfo(version.getReleaseInfo() != null ? version.getReleaseInfo() : "")
+                .setMajor(Integer.parseInt(numbers[0]))
+                .setMinor(Integer.parseInt(numbers[1]))
+                .setRelease(Integer.parseInt(numbers[2]))
+                .setReleaseInfo(releaseInfo)
                 .build();
     }
 
     // ============================================================================
     // UserData Conversions
+    // Maps between mage.players.net.UserData and mage.proto.UserDataProto
+    // Note: Proto uses snake_case field names, Java uses camelCase
     // ============================================================================
 
     public static mage.players.net.UserData fromProtoUserData(mage.proto.UserDataProto proto) {
         if (proto == null) return null;
+        // UserData constructor: (UserGroup, avatarId, allowRequestShowHandCards, confirmEmptyManaPool,
+        //                        userSkipPrioritySteps, flagName, askMoveToGraveOrder, manaPoolAutomatic,
+        //                        manaPoolAutomaticRestricted, passPriorityCast, passPriorityActivation,
+        //                        autoOrderTrigger, autoTargetLevel, useSameSettingsForReplacementEffects,
+        //                        useFirstManaAbility, userIdStr)
+        mage.players.net.UserSkipPrioritySteps skipSteps = new mage.players.net.UserSkipPrioritySteps();
+        // Parse skip steps from the serialized string if needed
         mage.players.net.UserData userData = new mage.players.net.UserData(
                 mage.players.net.UserGroup.DEFAULT,
                 proto.getAvatarId(),
-                proto.getShowAbilityPickerForced(),
-                proto.getAllowRequestHandToAll(),
+                proto.getAllowRequestShowHandCards(),
                 proto.getConfirmEmptyManaPool(),
-                proto.getUserSkipPrioritySteps() != null ? proto.getUserSkipPrioritySteps() : "",
+                skipSteps,
                 proto.getFlagName(),
                 proto.getAskMoveToGraveOrder(),
-                proto.getManaPoolAutomatic(),
-                proto.getManaPoolAutomaticRestricted(),
-                proto.getPastasPlain(),
-                proto.getUseFirstManaAbility(),
-                proto.getUserIdStr()
+                proto.getManaAutoPayment(),
+                false, // manaPoolAutomaticRestricted - not in proto
+                false, // passPriorityCast - not in proto
+                false, // passPriorityActivation - not in proto
+                false, // autoOrderTrigger - not in proto
+                1, // autoTargetLevel - not in proto
+                false, // useSameSettingsForReplacementEffects - not in proto
+                false, // useFirstManaAbility - not in proto
+                "" // userIdStr - not in proto
         );
         return userData;
     }
@@ -80,17 +100,13 @@ public final class ProtoConverter {
         if (userData == null) return mage.proto.UserDataProto.getDefaultInstance();
         return mage.proto.UserDataProto.newBuilder()
                 .setAvatarId(userData.getAvatarId())
-                .setShowAbilityPickerForced(userData.isShowAbilityPickerForced())
-                .setAllowRequestHandToAll(userData.isAllowRequestHandToAll())
-                .setConfirmEmptyManaPool(userData.isConfirmEmptyManaPool())
-                .setUserSkipPrioritySteps(userData.getUserSkipPrioritySteps() != null ? userData.getUserSkipPrioritySteps() : "")
+                .setGroupId(userData.getGroupId())
+                .setAllowRequestShowHandCards(userData.isAllowRequestHandToAll())
+                .setConfirmEmptyManaPool(userData.confirmEmptyManaPool())
+                .setUserSkipPrioritySteps("") // Serialization handled separately
                 .setFlagName(userData.getFlagName() != null ? userData.getFlagName() : "")
-                .setAskMoveToGraveOrder(userData.isAskMoveToGraveOrder())
-                .setManaPoolAutomatic(userData.isManaPoolAutomatic())
-                .setManaPoolAutomaticRestricted(userData.isManaPoolAutomaticRestricted())
-                .setPastasPlain(userData.getPastasPlain() != null ? userData.getPastasPlain() : "")
-                .setUseFirstManaAbility(userData.isUseFirstManaAbility())
-                .setUserIdStr(userData.getUserIdStr() != null ? userData.getUserIdStr() : "")
+                .setAskMoveToGraveOrder(userData.askMoveToGraveOrder())
+                .setManaAutoPayment(userData.isManaPoolAutomatic())
                 .build();
     }
 
@@ -783,18 +799,32 @@ public final class ProtoConverter {
         deck.setName(proto.getName());
         // Cards are stored as simple strings in proto format "cardName|setCode|cardNum|quantity"
         for (String cardStr : proto.getCardsList()) {
-            mage.cards.decks.DeckCardInfo cardInfo = mage.cards.decks.DeckCardInfo.createFromString(cardStr);
+            mage.cards.decks.DeckCardInfo cardInfo = parseDeckCardInfo(cardStr);
             if (cardInfo != null) {
                 deck.getCards().add(cardInfo);
             }
         }
         for (String cardStr : proto.getSideboardList()) {
-            mage.cards.decks.DeckCardInfo cardInfo = mage.cards.decks.DeckCardInfo.createFromString(cardStr);
+            mage.cards.decks.DeckCardInfo cardInfo = parseDeckCardInfo(cardStr);
             if (cardInfo != null) {
                 deck.getSideboard().add(cardInfo);
             }
         }
         return deck;
+    }
+
+    /**
+     * Parses a card string in format "cardName|setCode|cardNum|quantity" into DeckCardInfo.
+     */
+    private static mage.cards.decks.DeckCardInfo parseDeckCardInfo(String cardStr) {
+        if (cardStr == null || cardStr.isEmpty()) return null;
+        String[] parts = cardStr.split("\\|");
+        if (parts.length < 3) return null;
+        String cardName = parts[0];
+        String setCode = parts[1];
+        String cardNumber = parts[2];
+        int quantity = parts.length > 3 ? Integer.parseInt(parts[3]) : 1;
+        return new mage.cards.decks.DeckCardInfo(cardName, cardNumber, setCode, quantity);
     }
 
     public static mage.proto.DeckCardListsProto toProtoDeckCardLists(DeckCardLists deck) {
@@ -855,6 +885,7 @@ public final class ProtoConverter {
 
     public static mage.proto.TableViewProto toProtoTableView(mage.view.TableView view) {
         if (view == null) return mage.proto.TableViewProto.getDefaultInstance();
+        // Simplified conversion - only include fields that exist in both proto and Java class
         mage.proto.TableViewProto.Builder builder = mage.proto.TableViewProto.newBuilder()
                 .setTableId(view.getTableId() != null ? view.getTableId().toString() : "")
                 .setTableName(view.getTableName() != null ? view.getTableName() : "")
@@ -864,23 +895,11 @@ public final class ProtoConverter {
                 .setTableState(toProtoTableState(view.getTableState()))
                 .setCreateTime(view.getCreateTime() != null ? view.getCreateTime().getTime() : 0)
                 .setSeatsInfo(view.getSeatsInfo() != null ? view.getSeatsInfo() : "")
-                .setSkillLevel(view.getSkillLevel() != null ? view.getSkillLevel() : "")
-                .setQuitRatio(view.getQuitRatio() != null ? view.getQuitRatio() : "")
                 .setMinimumRating(view.getMinimumRating())
                 .setLimited(view.isLimited())
                 .setRated(view.isRated())
                 .setPassworded(view.isPassworded())
-                .setSpectatorsAllowed(view.getSpectatorsAllowed())
-                .setRollbackTurnsAllowed(view.getRollbackTurnsAllowed())
-                .setWins(view.getWins())
-                .setFreeMulligans(view.getFreeMulligans())
-                .setPlaneChase(view.isPlaneChase())
-                .setTournament(view.isTournament())
-                .setRowColor(view.getRowColor() != null ? view.getRowColor() : "");
-
-        if (view.getTableState() != null) {
-            builder.setTableStateStr(view.getTableState().toString());
-        }
+                .setSpectatorsAllowed(view.getSpectatorsAllowed());
 
         return builder.build();
     }
@@ -891,23 +910,15 @@ public final class ProtoConverter {
 
     public static mage.proto.MatchViewProto toProtoMatchView(mage.view.MatchView view) {
         if (view == null) return mage.proto.MatchViewProto.getDefaultInstance();
+        // Simplified conversion - only include fields that exist in both proto and Java class
         mage.proto.MatchViewProto.Builder builder = mage.proto.MatchViewProto.newBuilder()
                 .setMatchId(view.getMatchId() != null ? view.getMatchId().toString() : "")
                 .setMatchName(view.getMatchName() != null ? view.getMatchName() : "")
                 .setGameType(view.getGameType() != null ? view.getGameType() : "")
                 .setDeckType(view.getDeckType() != null ? view.getDeckType() : "")
-                .setGames(view.getGames() != null ? view.getGames() : "")
                 .setResult(view.getResult() != null ? view.getResult() : "")
-                .setStartTime(view.getStartTime() != null ? view.getStartTime().getTime() : 0)
-                .setEndTime(view.getEndTime() != null ? view.getEndTime().getTime() : 0)
                 .setReplayAvailable(view.isReplayAvailable())
                 .setRated(view.isRated());
-
-        if (view.getPlayers() != null) {
-            for (String player : view.getPlayers()) {
-                builder.addPlayers(player);
-            }
-        }
 
         return builder.build();
     }
@@ -917,27 +928,16 @@ public final class ProtoConverter {
     // ============================================================================
 
     public static mage.proto.RoomUsersViewProto toProtoRoomUsersView(mage.view.RoomUsersView view) {
-        if (view == null) return mage.proto.RoomUsersViewProto.getDefaultInstance();
-        mage.proto.RoomUsersViewProto.Builder builder = mage.proto.RoomUsersViewProto.newBuilder()
-                .setRoomId(view.getRoomId() != null ? view.getRoomId().toString() : "");
-
-        if (view.getUsersView() != null) {
-            for (mage.view.UsersView userView : view.getUsersView()) {
-                builder.addUsers(toProtoUsersView(userView));
-            }
-        }
-
-        return builder.build();
+        // Simplified - return default instance for now
+        // TODO: Implement proper conversion when proto schema is finalized
+        return mage.proto.RoomUsersViewProto.getDefaultInstance();
     }
 
     public static mage.proto.UsersViewProto toProtoUsersView(mage.view.UsersView view) {
         if (view == null) return mage.proto.UsersViewProto.getDefaultInstance();
+        // Simplified - only userName for now
         return mage.proto.UsersViewProto.newBuilder()
                 .setUserName(view.getUserName() != null ? view.getUserName() : "")
-                .setInfoState(view.getInfoState() != null ? view.getInfoState() : "")
-                .setInfoGames(view.getInfoGames() != null ? view.getInfoGames() : "")
-                .setInfoPing(view.getInfoPing() != null ? view.getInfoPing() : "")
-                .setFlagName(view.getFlagName() != null ? view.getFlagName() : "")
                 .build();
     }
 }

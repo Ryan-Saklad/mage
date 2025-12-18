@@ -31,12 +31,18 @@ import mage.view.*;
 import org.apache.log4j.Logger;
 
 import java.security.SecureRandom;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.Optional;
 
 /**
  * gRPC implementation of the MageService, replacing JBoss remoting.
@@ -383,7 +389,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
     @Override
     public void roomGetUsers(RoomRequest request, StreamObserver<RoomUsersResponse> responseObserver) {
         try {
-            UUID roomId = fromProtoUuid(request.getRoomId());
+            UUID roomId = ProtoConverter.fromProtoUuid(request.getRoomId());
             Optional<GamesRoom> room = managerFactory.gamesRoomManager().getRoom(roomId);
 
             RoomUsersResponse.Builder builder = RoomUsersResponse.newBuilder();
@@ -402,7 +408,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
     @Override
     public void roomGetFinishedMatches(RoomRequest request, StreamObserver<MatchListResponse> responseObserver) {
         try {
-            UUID roomId = fromProtoUuid(request.getRoomId());
+            UUID roomId = ProtoConverter.fromProtoUuid(request.getRoomId());
             MatchListResponse.Builder builder = MatchListResponse.newBuilder();
 
             managerFactory.gamesRoomManager().getRoom(roomId).ifPresent(room -> {
@@ -421,7 +427,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
     @Override
     public void roomGetAllTables(RoomRequest request, StreamObserver<TableListResponse> responseObserver) {
         try {
-            UUID roomId = fromProtoUuid(request.getRoomId());
+            UUID roomId = ProtoConverter.fromProtoUuid(request.getRoomId());
             TableListResponse.Builder builder = TableListResponse.newBuilder();
 
             managerFactory.gamesRoomManager().getRoom(roomId).ifPresent(room -> {
@@ -440,8 +446,8 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
     @Override
     public void roomGetTableById(GetTableRequest request, StreamObserver<TableViewProto> responseObserver) {
         try {
-            UUID roomId = fromProtoUuid(request.getRoomId());
-            UUID tableId = fromProtoUuid(request.getTableId());
+            UUID roomId = ProtoConverter.fromProtoUuid(request.getRoomId());
+            UUID tableId = ProtoConverter.fromProtoUuid(request.getTableId());
 
             Optional<GamesRoom> room = managerFactory.gamesRoomManager().getRoom(roomId);
             if (room.isPresent()) {
@@ -477,7 +483,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             }
 
             UUID userId = session.get().getUserId();
-            UUID roomId = fromProtoUuid(request.getRoomId());
+            UUID roomId = ProtoConverter.fromProtoUuid(request.getRoomId());
             MatchOptions options = fromProtoMatchOptions(request.getMatchOptions());
 
             Optional<GamesRoom> room = managerFactory.gamesRoomManager().getRoom(roomId);
@@ -496,11 +502,11 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
     }
 
     private MatchOptions fromProtoMatchOptions(MatchOptionsProto proto) {
-        MatchOptions options = new MatchOptions(proto.getName(), proto.getGameType(), false, proto.getNumSeats());
+        MatchOptions options = new MatchOptions(proto.getName(), proto.getGameType(), false);
         options.setDeckType(proto.getDeckType());
         options.setLimited(proto.getLimited());
         options.setRated(proto.getRated());
-        options.setSkillLevel(toSkillLevel(proto.getSkillLevel()));
+        options.setSkillLevel(ProtoConverter.toSkillLevel(proto.getSkillLevel()));
         options.setWinsNeeded(proto.getWinsNeeded());
         options.setFreeMulligans(proto.getFreeMulligan());
         options.setPassword(proto.getPassword());
@@ -510,7 +516,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
         options.setQuitRatio(proto.getQuitRatio());
         options.setMinimumRating(proto.getMinimumRating());
         options.setEdhPowerLevel(proto.getEdhPowerLevel());
-        options.setPriorityTime(proto.getPriorityTime());
+        // MatchTimeLimit and MatchBufferTime are set via enums, not raw time values
         return options;
     }
 
@@ -532,7 +538,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             }
 
             UUID userId = session.get().getUserId();
-            UUID roomId = fromProtoUuid(request.getRoomId());
+            UUID roomId = ProtoConverter.fromProtoUuid(request.getRoomId());
             TournamentOptions options = fromProtoTournamentOptions(request.getTournamentOptions());
 
             Optional<GamesRoom> room = managerFactory.gamesRoomManager().getRoom(roomId);
@@ -551,13 +557,15 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
     }
 
     private TournamentOptions fromProtoTournamentOptions(TournamentOptionsProto proto) {
-        TournamentOptions options = new TournamentOptions(proto.getName());
+        // TournamentOptions constructor: (String name, String matchType, boolean isSingleMultiplayerGame)
+        // Use matchOptions from proto as the match type
+        TournamentOptions options = new TournamentOptions(proto.getName(), proto.getMatchOptions(), false);
         options.setTournamentType(proto.getTournamentType());
         options.getMatchOptions().setDeckType(proto.getDeckType());
         options.getMatchOptions().setLimited(proto.getLimited());
         options.getMatchOptions().setRated(proto.getRated());
-        options.getMatchOptions().setSkillLevel(toSkillLevel(proto.getSkillLevel()));
-        options.setNumberSeats(proto.getNumSeats());
+        options.getMatchOptions().setSkillLevel(ProtoConverter.toSkillLevel(proto.getSkillLevel()));
+        // Note: num_seats is in proto but TournamentOptions has no setNumberSeats - used for player count
         options.setPassword(proto.getPassword());
         options.setWatchingAllowed(proto.getWatchAllowed());
         options.setQuitRatio(proto.getQuitRatio());
@@ -583,12 +591,12 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             }
 
             UUID userId = session.get().getUserId();
-            UUID roomId = fromProtoUuid(request.getRoomId());
-            UUID tableId = fromProtoUuid(request.getTableId());
+            UUID roomId = ProtoConverter.fromProtoUuid(request.getRoomId());
+            UUID tableId = ProtoConverter.fromProtoUuid(request.getTableId());
             String name = request.getName();
-            PlayerType playerType = toPlayerType(request.getPlayerType());
+            PlayerType playerType = ProtoConverter.toPlayerType(request.getPlayerType());
             int skill = request.getSkill();
-            DeckCardLists deckList = fromProtoDeckCardLists(request.getDeckList());
+            DeckCardLists deckList = ProtoConverter.fromProtoDeckCardLists(request.getDeckList());
             String password = request.getPassword();
 
             Optional<GamesRoom> room = managerFactory.gamesRoomManager().getRoom(roomId);
@@ -623,12 +631,12 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             }
 
             UUID userId = session.get().getUserId();
-            UUID roomId = fromProtoUuid(request.getRoomId());
-            UUID tableId = fromProtoUuid(request.getTableId());
+            UUID roomId = ProtoConverter.fromProtoUuid(request.getRoomId());
+            UUID tableId = ProtoConverter.fromProtoUuid(request.getTableId());
             String name = request.getName();
-            PlayerType playerType = toPlayerType(request.getPlayerType());
+            PlayerType playerType = ProtoConverter.toPlayerType(request.getPlayerType());
             int skill = request.getSkill();
-            DeckCardLists deckList = fromProtoDeckCardLists(request.getDeckList());
+            DeckCardLists deckList = ProtoConverter.fromProtoDeckCardLists(request.getDeckList());
             String password = request.getPassword();
 
             Optional<GamesRoom> room = managerFactory.gamesRoomManager().getRoom(roomId);
@@ -663,8 +671,8 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             }
 
             UUID userId = session.get().getUserId();
-            UUID roomId = fromProtoUuid(request.getRoomId());
-            UUID tableId = fromProtoUuid(request.getTableId());
+            UUID roomId = ProtoConverter.fromProtoUuid(request.getRoomId());
+            UUID tableId = ProtoConverter.fromProtoUuid(request.getTableId());
 
             Optional<GamesRoom> room = managerFactory.gamesRoomManager().getRoom(roomId);
             if (room.isPresent()) {
@@ -698,7 +706,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             }
 
             UUID userId = session.get().getUserId();
-            UUID tableId = fromProtoUuid(request.getTableId());
+            UUID tableId = ProtoConverter.fromProtoUuid(request.getTableId());
 
             boolean success = managerFactory.tableManager().watchTable(userId, tableId);
             responseObserver.onNext(BoolResponse.newBuilder().setSuccess(success).build());
@@ -713,8 +721,8 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
     public void roomLeaveTableOrTournament(LeaveTableRequest request, StreamObserver<BoolResponse> responseObserver) {
         try {
             String sessionId = request.getSessionId();
-            UUID roomId = fromProtoUuid(request.getRoomId());
-            UUID tableId = fromProtoUuid(request.getTableId());
+            UUID roomId = ProtoConverter.fromProtoUuid(request.getRoomId());
+            UUID tableId = ProtoConverter.fromProtoUuid(request.getTableId());
 
             Optional<TableController> tableController = managerFactory.tableManager().getController(tableId);
             if (tableController.isPresent()) {
@@ -754,7 +762,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             managerFactory.sessionManager().getSession(sessionId).ifPresent(session -> {
                 UUID userId = session.getUserId();
-                UUID tableId = fromProtoUuid(request.getTableId());
+                UUID tableId = ProtoConverter.fromProtoUuid(request.getTableId());
                 managerFactory.tableManager().swapSeats(tableId, userId, request.getSeatNum1(), request.getSeatNum2());
             });
 
@@ -777,7 +785,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             managerFactory.sessionManager().getSession(sessionId).ifPresent(session -> {
                 UUID userId = session.getUserId();
-                UUID tableId = fromProtoUuid(request.getTableId());
+                UUID tableId = ProtoConverter.fromProtoUuid(request.getTableId());
                 managerFactory.tableManager().removeTable(userId, tableId);
             });
 
@@ -806,7 +814,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             }
 
             UUID userId = session.get().getUserId();
-            UUID tableId = fromProtoUuid(request.getTableId());
+            UUID tableId = ProtoConverter.fromProtoUuid(request.getTableId());
             boolean isOwner = managerFactory.tableManager().isTableOwner(tableId, userId);
 
             responseObserver.onNext(BoolResponse.newBuilder().setSuccess(isOwner).build());
@@ -837,8 +845,8 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             }
 
             UUID userId = session.get().getUserId();
-            UUID tableId = fromProtoUuid(request.getTableId());
-            DeckCardLists deckList = fromProtoDeckCardLists(request.getDeckList());
+            UUID tableId = ProtoConverter.fromProtoUuid(request.getTableId());
+            DeckCardLists deckList = ProtoConverter.fromProtoDeckCardLists(request.getDeckList());
 
             boolean success = managerFactory.tableManager().submitDeck(userId, tableId, deckList);
             responseObserver.onNext(BoolResponse.newBuilder().setSuccess(success).build());
@@ -862,8 +870,8 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             Optional<Session> session = managerFactory.sessionManager().getSession(sessionId);
             if (session.isPresent()) {
                 UUID userId = session.get().getUserId();
-                UUID tableId = fromProtoUuid(request.getTableId());
-                DeckCardLists deckList = fromProtoDeckCardLists(request.getDeckList());
+                UUID tableId = ProtoConverter.fromProtoUuid(request.getTableId());
+                DeckCardLists deckList = ProtoConverter.fromProtoDeckCardLists(request.getDeckList());
                 managerFactory.tableManager().updateDeck(userId, tableId, deckList);
             }
 
@@ -879,7 +887,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
     @Override
     public void chatSendMessage(ChatSendRequest request, StreamObserver<Empty> responseObserver) {
         try {
-            UUID chatId = fromProtoUuid(request.getChatId());
+            UUID chatId = ProtoConverter.fromProtoUuid(request.getChatId());
             String message = request.getMessage();
 
             if (message.length() > mage.constants.Constants.MAX_CHAT_MESSAGE_SIZE) {
@@ -921,7 +929,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             managerFactory.sessionManager().getSession(sessionId).ifPresent(session -> {
                 UUID userId = session.getUserId();
-                UUID chatId = fromProtoUuid(request.getChatId());
+                UUID chatId = ProtoConverter.fromProtoUuid(request.getChatId());
                 managerFactory.chatManager().joinChat(chatId, userId);
             });
 
@@ -936,7 +944,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
     public void chatLeave(ChatLeaveRequest request, StreamObserver<Empty> responseObserver) {
         try {
             String sessionId = request.getSessionId();
-            UUID chatId = fromProtoUuid(request.getChatId());
+            UUID chatId = ProtoConverter.fromProtoUuid(request.getChatId());
 
             if (chatId != null) {
                 managerFactory.sessionManager().getSession(sessionId).ifPresent(session -> {
@@ -955,7 +963,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
     @Override
     public void chatFindByGame(UuidRequest request, StreamObserver<UuidResponse> responseObserver) {
         try {
-            UUID gameId = fromProtoUuid(request.getUuid());
+            UUID gameId = ProtoConverter.fromProtoUuid(request.getUuid());
             UUID chatId = managerFactory.gameManager().getChatId(gameId).orElse(null);
             responseObserver.onNext(UuidResponse.newBuilder().setUuid(ProtoConverter.toProtoUuid(chatId)).build());
             responseObserver.onCompleted();
@@ -967,7 +975,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
     @Override
     public void chatFindByTable(UuidRequest request, StreamObserver<UuidResponse> responseObserver) {
         try {
-            UUID tableId = fromProtoUuid(request.getUuid());
+            UUID tableId = ProtoConverter.fromProtoUuid(request.getUuid());
             UUID chatId = managerFactory.tableManager().getChatId(tableId).orElse(null);
             responseObserver.onNext(UuidResponse.newBuilder().setUuid(ProtoConverter.toProtoUuid(chatId)).build());
             responseObserver.onCompleted();
@@ -979,7 +987,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
     @Override
     public void chatFindByTournament(UuidRequest request, StreamObserver<UuidResponse> responseObserver) {
         try {
-            UUID tournamentId = fromProtoUuid(request.getUuid());
+            UUID tournamentId = ProtoConverter.fromProtoUuid(request.getUuid());
             UUID chatId = managerFactory.tournamentManager().getChatId(tournamentId).orElse(null);
             responseObserver.onNext(UuidResponse.newBuilder().setUuid(ProtoConverter.toProtoUuid(chatId)).build());
             responseObserver.onCompleted();
@@ -991,7 +999,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
     @Override
     public void chatFindByRoom(UuidRequest request, StreamObserver<UuidResponse> responseObserver) {
         try {
-            UUID roomId = fromProtoUuid(request.getUuid());
+            UUID roomId = ProtoConverter.fromProtoUuid(request.getUuid());
             Optional<GamesRoom> room = managerFactory.gamesRoomManager().getRoom(roomId);
             UUID chatId = room.map(GamesRoom::getChatId).orElse(null);
             responseObserver.onNext(UuidResponse.newBuilder().setUuid(ProtoConverter.toProtoUuid(chatId)).build());
@@ -1007,8 +1015,8 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
     public void matchStart(MatchStartRequest request, StreamObserver<BoolResponse> responseObserver) {
         try {
             String sessionId = request.getSessionId();
-            UUID roomId = fromProtoUuid(request.getRoomId());
-            UUID tableId = fromProtoUuid(request.getTableId());
+            UUID roomId = ProtoConverter.fromProtoUuid(request.getRoomId());
+            UUID tableId = ProtoConverter.fromProtoUuid(request.getTableId());
 
             Optional<TableController> controller = managerFactory.tableManager().getController(tableId);
             if (!controller.isPresent()) {
@@ -1042,7 +1050,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
     public void matchQuit(MatchQuitRequest request, StreamObserver<Empty> responseObserver) {
         try {
             String sessionId = request.getSessionId();
-            UUID gameId = fromProtoUuid(request.getGameId());
+            UUID gameId = ProtoConverter.fromProtoUuid(request.getGameId());
 
             callExecutor.execute(() -> {
                 managerFactory.sessionManager().getSession(sessionId).ifPresent(session -> {
@@ -1072,7 +1080,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             managerFactory.sessionManager().getSession(sessionId).ifPresent(session -> {
                 UUID userId = session.getUserId();
-                UUID gameId = fromProtoUuid(request.getGameId());
+                UUID gameId = ProtoConverter.fromProtoUuid(request.getGameId());
                 managerFactory.gameManager().joinGame(gameId, userId);
             });
 
@@ -1093,8 +1101,8 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
                 return;
             }
 
-            UUID gameId = fromProtoUuid(request.getGameId());
-            UUID playerId = fromProtoUuid(request.getPlayerId());
+            UUID gameId = ProtoConverter.fromProtoUuid(request.getGameId());
+            UUID playerId = ProtoConverter.fromProtoUuid(request.getPlayerId());
 
             GameView view = managerFactory.gameManager().getGameView(gameId, playerId);
             responseObserver.onNext(toProtoGameView(view));
@@ -1122,7 +1130,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             }
 
             UUID userId = session.get().getUserId();
-            UUID gameId = fromProtoUuid(request.getGameId());
+            UUID gameId = ProtoConverter.fromProtoUuid(request.getGameId());
 
             boolean success = managerFactory.gameManager().watchGame(gameId, userId);
             responseObserver.onNext(BoolResponse.newBuilder().setSuccess(success).build());
@@ -1140,7 +1148,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             managerFactory.sessionManager().getSession(sessionId).ifPresent(session -> {
                 UUID userId = session.getUserId();
-                UUID gameId = fromProtoUuid(request.getGameId());
+                UUID gameId = ProtoConverter.fromProtoUuid(request.getGameId());
 
                 managerFactory.userManager().getUser(userId).ifPresent(user -> {
                     managerFactory.gameManager().stopWatching(gameId, userId);
@@ -1169,8 +1177,8 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             Optional<User> user = managerFactory.sessionManager().getUser(sessionId);
             if (user.isPresent()) {
-                UUID gameId = fromProtoUuid(request.getGameId());
-                UUID data = fromProtoUuid(request.getData());
+                UUID gameId = ProtoConverter.fromProtoUuid(request.getGameId());
+                UUID data = ProtoConverter.fromProtoUuid(request.getData());
                 user.get().sendPlayerUUID(gameId, data);
             }
 
@@ -1193,7 +1201,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             Optional<User> user = managerFactory.sessionManager().getUser(sessionId);
             if (user.isPresent()) {
-                UUID gameId = fromProtoUuid(request.getGameId());
+                UUID gameId = ProtoConverter.fromProtoUuid(request.getGameId());
                 user.get().sendPlayerString(gameId, request.getData());
             }
 
@@ -1216,7 +1224,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             Optional<User> user = managerFactory.sessionManager().getUser(sessionId);
             if (user.isPresent()) {
-                UUID gameId = fromProtoUuid(request.getGameId());
+                UUID gameId = ProtoConverter.fromProtoUuid(request.getGameId());
                 user.get().sendPlayerBoolean(gameId, request.getData());
             }
 
@@ -1239,7 +1247,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             Optional<User> user = managerFactory.sessionManager().getUser(sessionId);
             if (user.isPresent()) {
-                UUID gameId = fromProtoUuid(request.getGameId());
+                UUID gameId = ProtoConverter.fromProtoUuid(request.getGameId());
                 user.get().sendPlayerInteger(gameId, request.getData());
             }
 
@@ -1262,9 +1270,9 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             Optional<User> user = managerFactory.sessionManager().getUser(sessionId);
             if (user.isPresent()) {
-                UUID gameId = fromProtoUuid(request.getGameId());
-                UUID playerId = fromProtoUuid(request.getPlayerId());
-                ManaType manaType = toManaType(request.getData());
+                UUID gameId = ProtoConverter.fromProtoUuid(request.getGameId());
+                UUID playerId = ProtoConverter.fromProtoUuid(request.getPlayerId());
+                ManaType manaType = ProtoConverter.toManaType(request.getData());
                 user.get().sendPlayerManaType(gameId, playerId, manaType);
             }
 
@@ -1287,8 +1295,8 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             managerFactory.sessionManager().getSession(sessionId).ifPresent(session -> {
                 UUID userId = session.getUserId();
-                UUID gameId = fromProtoUuid(request.getGameId());
-                PlayerAction action = toPlayerAction(request.getAction());
+                UUID gameId = ProtoConverter.fromProtoUuid(request.getGameId());
+                PlayerAction action = ProtoConverter.toPlayerAction(request.getAction());
                 // data is serialized in bytes - for now pass null, will need to handle specific actions
                 managerFactory.gameManager().sendPlayerAction(action, gameId, userId, null);
             });
@@ -1319,11 +1327,11 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
                 return;
             }
 
-            UUID draftId = fromProtoUuid(request.getDraftId());
-            UUID cardId = fromProtoUuid(request.getCardId());
+            UUID draftId = ProtoConverter.fromProtoUuid(request.getDraftId());
+            UUID cardId = ProtoConverter.fromProtoUuid(request.getCardId());
             Set<UUID> hiddenCards = new HashSet<>();
             for (String id : request.getHiddenCardsList()) {
-                hiddenCards.add(fromProtoUuid(id));
+                hiddenCards.add(ProtoConverter.fromProtoUuid(id));
             }
 
             DraftPickView view = managerFactory.draftManager().sendCardPick(draftId, session.get().getUserId(), cardId, hiddenCards);
@@ -1346,8 +1354,8 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             managerFactory.sessionManager().getSession(sessionId).ifPresent(session -> {
                 UUID userId = session.getUserId();
-                UUID draftId = fromProtoUuid(request.getDraftId());
-                UUID cardId = fromProtoUuid(request.getCardId());
+                UUID draftId = ProtoConverter.fromProtoUuid(request.getDraftId());
+                UUID cardId = ProtoConverter.fromProtoUuid(request.getCardId());
                 managerFactory.draftManager().sendCardMark(draftId, userId, cardId);
             });
 
@@ -1370,7 +1378,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             managerFactory.sessionManager().getSession(sessionId).ifPresent(session -> {
                 UUID userId = session.getUserId();
-                UUID draftId = fromProtoUuid(request.getDraftId());
+                UUID draftId = ProtoConverter.fromProtoUuid(request.getDraftId());
                 managerFactory.draftManager().joinDraft(draftId, userId);
             });
 
@@ -1389,7 +1397,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             callExecutor.execute(() -> {
                 managerFactory.sessionManager().getSession(sessionId).ifPresent(session -> {
                     UUID userId = session.getUserId();
-                    UUID draftId = fromProtoUuid(request.getDraftId());
+                    UUID draftId = ProtoConverter.fromProtoUuid(request.getDraftId());
                     UUID tableId = managerFactory.draftManager().getControllerByDraftId(draftId).getTableId();
                     Table table = managerFactory.tableManager().getTable(tableId);
                     if (table.isTournament()) {
@@ -1418,7 +1426,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             managerFactory.sessionManager().getSession(sessionId).ifPresent(session -> {
                 UUID userId = session.getUserId();
-                UUID draftId = fromProtoUuid(request.getDraftId());
+                UUID draftId = ProtoConverter.fromProtoUuid(request.getDraftId());
                 managerFactory.draftManager().setBoosterLoaded(draftId, userId);
             });
 
@@ -1435,8 +1443,8 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
     public void tournamentStart(TournamentStartRequest request, StreamObserver<BoolResponse> responseObserver) {
         try {
             String sessionId = request.getSessionId();
-            UUID roomId = fromProtoUuid(request.getRoomId());
-            UUID tableId = fromProtoUuid(request.getTableId());
+            UUID roomId = ProtoConverter.fromProtoUuid(request.getRoomId());
+            UUID tableId = ProtoConverter.fromProtoUuid(request.getTableId());
 
             Optional<TableController> controller = managerFactory.tableManager().getController(tableId);
             if (!controller.isPresent()) {
@@ -1479,7 +1487,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             Optional<Session> session = managerFactory.sessionManager().getSession(sessionId);
             if (session.isPresent()) {
                 UUID userId = session.get().getUserId();
-                UUID tournamentId = fromProtoUuid(request.getTournamentId());
+                UUID tournamentId = ProtoConverter.fromProtoUuid(request.getTournamentId());
                 managerFactory.tournamentManager().joinTournament(tournamentId, userId);
             }
 
@@ -1498,7 +1506,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             callExecutor.execute(() -> {
                 managerFactory.sessionManager().getSession(sessionId).ifPresent(session -> {
                     UUID userId = session.getUserId();
-                    UUID tournamentId = fromProtoUuid(request.getTournamentId());
+                    UUID tournamentId = ProtoConverter.fromProtoUuid(request.getTournamentId());
                     managerFactory.tournamentManager().quit(tournamentId, userId);
                 });
             });
@@ -1513,7 +1521,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
     @Override
     public void tournamentFindById(UuidRequest request, StreamObserver<TournamentViewProto> responseObserver) {
         try {
-            UUID tournamentId = fromProtoUuid(request.getUuid());
+            UUID tournamentId = ProtoConverter.fromProtoUuid(request.getUuid());
             TournamentView view = managerFactory.tournamentManager().getTournamentView(tournamentId);
             responseObserver.onNext(toProtoTournamentView(view));
             responseObserver.onCompleted();
@@ -1536,7 +1544,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             managerFactory.sessionManager().getSession(sessionId).ifPresent(session -> {
                 UUID userId = session.getUserId();
-                UUID gameId = fromProtoUuid(request.getGameId());
+                UUID gameId = ProtoConverter.fromProtoUuid(request.getGameId());
                 managerFactory.replayManager().replayGame(gameId, userId);
             });
 
@@ -1559,7 +1567,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             managerFactory.sessionManager().getSession(sessionId).ifPresent(session -> {
                 UUID userId = session.getUserId();
-                UUID gameId = fromProtoUuid(request.getGameId());
+                UUID gameId = ProtoConverter.fromProtoUuid(request.getGameId());
                 managerFactory.replayManager().startReplay(gameId, userId);
             });
 
@@ -1578,7 +1586,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             Optional<Session> session = managerFactory.sessionManager().getSession(sessionId);
             if (session.isPresent()) {
                 UUID userId = session.get().getUserId();
-                UUID gameId = fromProtoUuid(request.getGameId());
+                UUID gameId = ProtoConverter.fromProtoUuid(request.getGameId());
                 managerFactory.replayManager().stopReplay(gameId, userId);
             }
 
@@ -1597,7 +1605,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             Optional<Session> session = managerFactory.sessionManager().getSession(sessionId);
             if (session.isPresent()) {
                 UUID userId = session.get().getUserId();
-                UUID gameId = fromProtoUuid(request.getGameId());
+                UUID gameId = ProtoConverter.fromProtoUuid(request.getGameId());
                 managerFactory.replayManager().nextPlay(gameId, userId);
             }
 
@@ -1616,7 +1624,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             Optional<Session> session = managerFactory.sessionManager().getSession(sessionId);
             if (session.isPresent()) {
                 UUID userId = session.get().getUserId();
-                UUID gameId = fromProtoUuid(request.getGameId());
+                UUID gameId = ProtoConverter.fromProtoUuid(request.getGameId());
                 managerFactory.replayManager().previousPlay(gameId, userId);
             }
 
@@ -1635,7 +1643,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             Optional<Session> session = managerFactory.sessionManager().getSession(sessionId);
             if (session.isPresent()) {
                 UUID userId = session.get().getUserId();
-                UUID gameId = fromProtoUuid(request.getGameId());
+                UUID gameId = ProtoConverter.fromProtoUuid(request.getGameId());
                 managerFactory.replayManager().skipForward(gameId, userId, request.getMoves());
             }
 
@@ -1661,8 +1669,8 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             if (testMode) {
                 managerFactory.sessionManager().getSession(sessionId).ifPresent(session -> {
                     UUID userId = session.getUserId();
-                    UUID gameId = fromProtoUuid(request.getGameId());
-                    UUID playerId = fromProtoUuid(request.getPlayerId());
+                    UUID gameId = ProtoConverter.fromProtoUuid(request.getGameId());
+                    UUID playerId = ProtoConverter.fromProtoUuid(request.getPlayerId());
                     managerFactory.gameManager().cheatShow(gameId, userId, playerId);
                 });
             }
@@ -1819,7 +1827,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             if (managerFactory.sessionManager().checkAdminAccess(sessionId)) {
                 managerFactory.sessionManager().getSession(sessionId).ifPresent(session -> {
                     UUID userId = session.getUserId();
-                    UUID tableId = fromProtoUuid(request.getTableId());
+                    UUID tableId = ProtoConverter.fromProtoUuid(request.getTableId());
                     managerFactory.tableManager().removeTable(userId, tableId);
                 });
             }
@@ -1894,5 +1902,34 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
                 // Client already disconnected
             }
         }
+    }
+
+    // ============================================================================
+    // View Converter Stubs - TODO: Implement full view conversions
+    // These return minimal/default proto instances for now to get compilation working.
+    // Full implementations will be needed for actual functionality.
+    // ============================================================================
+
+    private GameViewProto toProtoGameView(GameView view) {
+        // TODO: Implement full GameView -> GameViewProto conversion
+        return GameViewProto.getDefaultInstance();
+    }
+
+    private DraftPickViewProto toProtoDraftPickView(DraftPickView view) {
+        // TODO: Implement full DraftPickView -> DraftPickViewProto conversion
+        return DraftPickViewProto.getDefaultInstance();
+    }
+
+    private TournamentViewProto toProtoTournamentView(TournamentView view) {
+        // TODO: Implement full TournamentView -> TournamentViewProto conversion
+        return TournamentViewProto.getDefaultInstance();
+    }
+
+    private UserViewProto toProtoUserView(UserView view) {
+        // TODO: Implement full UserView -> UserViewProto conversion
+        if (view == null) return UserViewProto.getDefaultInstance();
+        return UserViewProto.newBuilder()
+                .setUserName(view.getUserName() != null ? view.getUserName() : "")
+                .build();
     }
 }
