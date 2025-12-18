@@ -45,6 +45,8 @@ Utils/*implemented.txt
 # Visual Studio Code
 .vscode
 .history
+# Claude Code
+.claude
 # Eclipse
 .metadata
 .project
