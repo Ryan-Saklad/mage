@@ -1331,4 +1331,203 @@ public final class ProtoConverter {
         }
         return builder.build();
     }
+
+    // ============================================================================
+    // UserView Conversion
+    // ============================================================================
+
+    public static mage.proto.UserViewProto toProtoUserView(mage.view.UserView view) {
+        if (view == null) return mage.proto.UserViewProto.getDefaultInstance();
+        return mage.proto.UserViewProto.newBuilder()
+                .setUserName(view.getUserName() != null ? view.getUserName() : "")
+                .setHost(view.getHost() != null ? view.getHost() : "")
+                .setSessionId(view.getSessionId() != null ? view.getSessionId() : "")
+                .setTimeConnected(view.getTimeConnected() != null ? view.getTimeConnected().getTime() : 0)
+                .setLastActivity(view.getLastActivity() != null ? view.getLastActivity().getTime() : 0)
+                .setGameInfo(view.getGameInfo() != null ? view.getGameInfo() : "")
+                .setUserState(view.getUserState() != null ? view.getUserState() : "")
+                .setMuteChatUntil(view.getMuteChatUntil() != null ? view.getMuteChatUntil().getTime() : 0)
+                .setClientVersion(view.getClientVersion() != null ? view.getClientVersion() : "")
+                .setEmail(view.getEmail() != null ? view.getEmail() : "")
+                .setUserIdStr(view.getUserIdStr() != null ? view.getUserIdStr() : "")
+                .build();
+    }
+
+    // ============================================================================
+    // SimpleCardView / SimpleCardsView Conversion
+    // ============================================================================
+
+    public static mage.proto.SimpleCardViewProto toProtoSimpleCardView(mage.view.SimpleCardView view) {
+        if (view == null) return mage.proto.SimpleCardViewProto.getDefaultInstance();
+        return mage.proto.SimpleCardViewProto.newBuilder()
+                .setId(view.getId() != null ? view.getId().toString() : "")
+                .setExpansionSetCode(view.getExpansionSetCode() != null ? view.getExpansionSetCode() : "")
+                .setCardNumber(view.getCardNumber() != null ? view.getCardNumber() : "")
+                .setUsesVariousArt(view.getUsesVariousArt())
+                .setGameObject(view.isGameObject())
+                .build();
+    }
+
+    public static mage.proto.SimpleCardsViewProto toProtoSimpleCardsView(mage.view.SimpleCardsView view) {
+        if (view == null) return mage.proto.SimpleCardsViewProto.getDefaultInstance();
+        mage.proto.SimpleCardsViewProto.Builder builder = mage.proto.SimpleCardsViewProto.newBuilder();
+        for (java.util.Map.Entry<java.util.UUID, mage.view.SimpleCardView> entry : view.entrySet()) {
+            builder.putCards(entry.getKey().toString(), toProtoSimpleCardView(entry.getValue()));
+        }
+        return builder.build();
+    }
+
+    // ============================================================================
+    // DraftPickView Conversion
+    // ============================================================================
+
+    public static mage.proto.DraftPickViewProto toProtoDraftPickView(mage.view.DraftPickView view) {
+        if (view == null) return mage.proto.DraftPickViewProto.getDefaultInstance();
+        return mage.proto.DraftPickViewProto.newBuilder()
+                .setBooster(toProtoSimpleCardsView(view.getBooster()))
+                .setPicks(toProtoSimpleCardsView(view.getPicks()))
+                .setPicking(view.isPicking())
+                .setTimeout(view.getTimeout())
+                .build();
+    }
+
+    // ============================================================================
+    // TournamentPlayerView Conversion
+    // ============================================================================
+
+    public static mage.proto.TournamentPlayerViewProto toProtoTournamentPlayerView(mage.view.TournamentPlayerView view) {
+        if (view == null) return mage.proto.TournamentPlayerViewProto.getDefaultInstance();
+        return mage.proto.TournamentPlayerViewProto.newBuilder()
+                .setName(view.getName() != null ? view.getName() : "")
+                .setState(view.getState() != null ? view.getState() : "")
+                .setResults(view.getResults() != null ? view.getResults() : "")
+                .setPoints(view.getPoints())
+                .setQuit(view.hasQuit())
+                .setFlagName(view.getFlagName() != null ? view.getFlagName() : "")
+                .setHistory(view.getHistory() != null ? view.getHistory() : "")
+                .build();
+    }
+
+    // ============================================================================
+    // TournamentGameView / RoundView Conversion
+    // ============================================================================
+
+    public static mage.proto.TournamentGameViewProto toProtoTournamentGameView(mage.view.TournamentGameView view) {
+        if (view == null) return mage.proto.TournamentGameViewProto.getDefaultInstance();
+        return mage.proto.TournamentGameViewProto.newBuilder()
+                .setRoundNum(view.getRoundNum())
+                .setMatchId(view.getMatchId() != null ? view.getMatchId().toString() : "")
+                .setGameId(view.getGameId() != null ? view.getGameId().toString() : "")
+                .setState(view.getState() != null ? view.getState() : "")
+                .setResult(view.getResult() != null ? view.getResult() : "")
+                .setPlayers(view.getPlayers() != null ? view.getPlayers() : "")
+                .setTableId(view.getTableId() != null ? view.getTableId().toString() : "")
+                .build();
+    }
+
+    public static mage.proto.RoundViewProto toProtoRoundView(mage.view.RoundView view) {
+        if (view == null) return mage.proto.RoundViewProto.getDefaultInstance();
+        mage.proto.RoundViewProto.Builder builder = mage.proto.RoundViewProto.newBuilder();
+        if (view.getGames() != null) {
+            for (mage.view.TournamentGameView game : view.getGames()) {
+                builder.addGames(toProtoTournamentGameView(game));
+            }
+        }
+        return builder.build();
+    }
+
+    // ============================================================================
+    // TournamentView Conversion
+    // ============================================================================
+
+    public static mage.proto.TournamentViewProto toProtoTournamentView(mage.view.TournamentView view) {
+        if (view == null) return mage.proto.TournamentViewProto.getDefaultInstance();
+        mage.proto.TournamentViewProto.Builder builder = mage.proto.TournamentViewProto.newBuilder()
+                .setTournamentName(view.getTournamentName() != null ? view.getTournamentName() : "")
+                .setTournamentType(view.getTournamentType() != null ? view.getTournamentType() : "")
+                .setTournamentState(view.getTournamentState() != null ? view.getTournamentState() : "")
+                .setStartTime(view.getStartTime() != null ? view.getStartTime().getTime() : 0)
+                .setEndTime(view.getEndTime() != null ? view.getEndTime().getTime() : 0)
+                .setStepStartTime(view.getStepStartTime() != null ? view.getStepStartTime().getTime() : 0)
+                .setServerTime(view.getServerTime() != null ? view.getServerTime().getTime() : 0)
+                .setConstructionTime(view.getConstructionTime())
+                .setWatchingAllowed(view.isWatchingAllowed())
+                .setRunningInfo(view.getRunningInfo() != null ? view.getRunningInfo() : "");
+        if (view.getRounds() != null) {
+            for (mage.view.RoundView round : view.getRounds()) {
+                builder.addRounds(toProtoRoundView(round));
+            }
+        }
+        if (view.getPlayers() != null) {
+            for (mage.view.TournamentPlayerView player : view.getPlayers()) {
+                builder.addPlayers(toProtoTournamentPlayerView(player));
+            }
+        }
+        return builder.build();
+    }
+
+    // ============================================================================
+    // GameView Conversion (simplified for now)
+    // ============================================================================
+
+    public static mage.proto.GameViewProto toProtoGameView(mage.view.GameView view) {
+        if (view == null) return mage.proto.GameViewProto.getDefaultInstance();
+        mage.proto.GameViewProto.Builder builder = mage.proto.GameViewProto.newBuilder()
+                .setPriorityTime(view.getPriorityTime())
+                .setBufferTime(view.getBufferTime())
+                .setActivePlayerName(view.getActivePlayerName() != null ? view.getActivePlayerName() : "")
+                .setPhase(view.getPhase() != null ? view.getPhase().toString() : "")
+                .setStep(toProtoPhaseStep(view.getStep()))
+                .setSpecial(view.getSpecial())
+                .setTurn(view.getTurn())
+                .setRollbackTurnsAllowed(view.isRollbackTurnsAllowed());
+
+        if (view.getActivePlayerId() != null) {
+            builder.setActivePlayerId(view.getActivePlayerId().toString());
+        }
+
+        // Add players
+        if (view.getPlayers() != null) {
+            for (mage.view.PlayerView player : view.getPlayers()) {
+                builder.addPlayers(toProtoPlayerView(player));
+            }
+        }
+
+        return builder.build();
+    }
+
+    // ============================================================================
+    // PlayerView Conversion
+    // ============================================================================
+
+    public static mage.proto.PlayerViewProto toProtoPlayerView(mage.view.PlayerView view) {
+        if (view == null) return mage.proto.PlayerViewProto.getDefaultInstance();
+        mage.proto.PlayerViewProto.Builder builder = mage.proto.PlayerViewProto.newBuilder()
+                .setPlayerId(view.getPlayerId() != null ? view.getPlayerId().toString() : "")
+                .setName(view.getName() != null ? view.getName() : "")
+                .setLife(view.getLife())
+                .setLibraryCount(view.getLibraryCount())
+                .setHandCount(view.getHandCount())
+                .setManaPool(toProtoManaPoolView(view.getManaPool()))
+                .setIsActive(view.isActive())
+                .setHasPriority(view.hasPriority())
+                .setHasLeft(view.hasLeft())
+                .setPriorityTimeLeftSecs(view.getPriorityTimeLeftSecs())
+                .setBufferTimeLeft(view.getBufferTimeLeft())
+                .setControlled(view.getControlled())
+                .setIsHuman(view.isHuman())
+                .setWins(view.getWins())
+                .setWinsNeeded(view.getWinsNeeded())
+                .setTimerActive(view.isTimerActive())
+                .setPassedTurn(view.isPassedTurn())
+                .setPassedUntilEndOfTurn(view.isPassedUntilEndOfTurn())
+                .setPassedUntilNextMain(view.isPassedUntilNextMain())
+                .setPassedUntilStackResolved(view.isPassedUntilStackResolved())
+                .setPassedAllTurns(view.isPassedAllTurns())
+                .setPassedUntilEndStepBeforeMyTurn(view.isPassedUntilEndStepBeforeMyTurn())
+                .setMonarch(view.isMonarch())
+                .setInitiative(view.isInitiative())
+                .setStatesSavedSize(view.getStatesSavedSize());
+        return builder.build();
+    }
 }

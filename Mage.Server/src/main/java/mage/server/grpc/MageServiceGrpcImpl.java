@@ -484,7 +484,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             UUID userId = session.get().getUserId();
             UUID roomId = ProtoConverter.fromProtoUuid(request.getRoomId());
-            MatchOptions options = fromProtoMatchOptions(request.getMatchOptions());
+            MatchOptions options = ProtoConverter.fromProtoMatchOptions(request.getMatchOptions());
 
             Optional<GamesRoom> room = managerFactory.gamesRoomManager().getRoom(roomId);
             if (room.isPresent()) {
@@ -499,25 +499,6 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             responseObserver.onNext(TableViewProto.getDefaultInstance());
             responseObserver.onCompleted();
         }
-    }
-
-    private MatchOptions fromProtoMatchOptions(MatchOptionsProto proto) {
-        MatchOptions options = new MatchOptions(proto.getName(), proto.getGameType(), false);
-        options.setDeckType(proto.getDeckType());
-        options.setLimited(proto.getLimited());
-        options.setRated(proto.getRated());
-        options.setSkillLevel(ProtoConverter.toSkillLevel(proto.getSkillLevel()));
-        options.setWinsNeeded(proto.getWinsNeeded());
-        options.setFreeMulligans(proto.getFreeMulligan());
-        options.setPassword(proto.getPassword());
-        options.setRollbackTurnsAllowed(proto.getRollbackTurnsAllowed());
-        options.setSpectatorsAllowed(proto.getSpectatorsAllowed());
-        options.setPlaneChase(proto.getPlaneChase());
-        options.setQuitRatio(proto.getQuitRatio());
-        options.setMinimumRating(proto.getMinimumRating());
-        options.setEdhPowerLevel(proto.getEdhPowerLevel());
-        // MatchTimeLimit and MatchBufferTime are set via enums, not raw time values
-        return options;
     }
 
     @Override
@@ -539,7 +520,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             UUID userId = session.get().getUserId();
             UUID roomId = ProtoConverter.fromProtoUuid(request.getRoomId());
-            TournamentOptions options = fromProtoTournamentOptions(request.getTournamentOptions());
+            TournamentOptions options = ProtoConverter.fromProtoTournamentOptions(request.getTournamentOptions());
 
             Optional<GamesRoom> room = managerFactory.gamesRoomManager().getRoom(roomId);
             if (room.isPresent()) {
@@ -554,23 +535,6 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             responseObserver.onNext(TableViewProto.getDefaultInstance());
             responseObserver.onCompleted();
         }
-    }
-
-    private TournamentOptions fromProtoTournamentOptions(TournamentOptionsProto proto) {
-        // TournamentOptions constructor: (String name, String matchType, boolean isSingleMultiplayerGame)
-        // Use matchOptions from proto as the match type
-        TournamentOptions options = new TournamentOptions(proto.getName(), proto.getMatchOptions(), false);
-        options.setTournamentType(proto.getTournamentType());
-        options.getMatchOptions().setDeckType(proto.getDeckType());
-        options.getMatchOptions().setLimited(proto.getLimited());
-        options.getMatchOptions().setRated(proto.getRated());
-        options.getMatchOptions().setSkillLevel(ProtoConverter.toSkillLevel(proto.getSkillLevel()));
-        // Note: num_seats is in proto but TournamentOptions has no setNumberSeats - used for player count
-        options.setPassword(proto.getPassword());
-        options.setWatchingAllowed(proto.getWatchAllowed());
-        options.setQuitRatio(proto.getQuitRatio());
-        options.setMinimumRating(proto.getMinimumRating());
-        return options;
     }
 
     @Override
@@ -1105,7 +1069,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             UUID playerId = ProtoConverter.fromProtoUuid(request.getPlayerId());
 
             GameView view = managerFactory.gameManager().getGameView(gameId, playerId);
-            responseObserver.onNext(toProtoGameView(view));
+            responseObserver.onNext(ProtoConverter.toProtoGameView(view));
             responseObserver.onCompleted();
         } catch (Exception e) {
             responseObserver.onError(e);
@@ -1335,7 +1299,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             }
 
             DraftPickView view = managerFactory.draftManager().sendCardPick(draftId, session.get().getUserId(), cardId, hiddenCards);
-            responseObserver.onNext(toProtoDraftPickView(view));
+            responseObserver.onNext(ProtoConverter.toProtoDraftPickView(view));
             responseObserver.onCompleted();
         } catch (Exception e) {
             responseObserver.onError(e);
@@ -1523,7 +1487,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
         try {
             UUID tournamentId = ProtoConverter.fromProtoUuid(request.getUuid());
             TournamentView view = managerFactory.tournamentManager().getTournamentView(tournamentId);
-            responseObserver.onNext(toProtoTournamentView(view));
+            responseObserver.onNext(ProtoConverter.toProtoTournamentView(view));
             responseObserver.onCompleted();
         } catch (Exception e) {
             responseObserver.onError(e);
@@ -1696,7 +1660,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             UserListResponse.Builder builder = UserListResponse.newBuilder();
             for (UserView view : managerFactory.userManager().getUserInfoList()) {
-                builder.addUsers(toProtoUserView(view));
+                builder.addUsers(ProtoConverter.toProtoUserView(view));
             }
 
             responseObserver.onNext(builder.build());
@@ -1904,32 +1868,4 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
         }
     }
 
-    // ============================================================================
-    // View Converter Stubs - TODO: Implement full view conversions
-    // These return minimal/default proto instances for now to get compilation working.
-    // Full implementations will be needed for actual functionality.
-    // ============================================================================
-
-    private GameViewProto toProtoGameView(GameView view) {
-        // TODO: Implement full GameView -> GameViewProto conversion
-        return GameViewProto.getDefaultInstance();
-    }
-
-    private DraftPickViewProto toProtoDraftPickView(DraftPickView view) {
-        // TODO: Implement full DraftPickView -> DraftPickViewProto conversion
-        return DraftPickViewProto.getDefaultInstance();
-    }
-
-    private TournamentViewProto toProtoTournamentView(TournamentView view) {
-        // TODO: Implement full TournamentView -> TournamentViewProto conversion
-        return TournamentViewProto.getDefaultInstance();
-    }
-
-    private UserViewProto toProtoUserView(UserView view) {
-        // TODO: Implement full UserView -> UserViewProto conversion
-        if (view == null) return UserViewProto.getDefaultInstance();
-        return UserViewProto.newBuilder()
-                .setUserName(view.getUserName() != null ? view.getUserName() : "")
-                .build();
-    }
 }
