@@ -1,0 +1,535 @@
+syntax = "proto3";
+
+package mage.proto;
+
+option java_package = "mage.proto";
+option java_outer_classname = "MageViewProtos";
+option java_multiple_files = true;
+
+import "mage_common.proto";
+
+message CounterViewProto {
+  string name = 1;
+  int32 count = 2;
+}
+
+message SimpleCardViewProto {
+  string id = 1;
+  string expansion_set_code = 2;
+  string card_number = 3;
+  bool uses_various_art = 4;
+  bool game_object = 5;
+  bool is_choosable = 6;
+  bool is_selected = 7;
+  PlayableObjectStats playable_stats = 8;
+}
+
+message ManaPoolViewProto {
+  int32 red = 1;
+  int32 green = 2;
+  int32 blue = 3;
+  int32 white = 4;
+  int32 black = 5;
+  int32 colorless = 6;
+}
+
+message CardViewProto {
+  string id = 1;
+  string expansion_set_code = 2;
+  string card_number = 3;
+  bool uses_various_art = 4;
+  bool game_object = 5;
+  bool is_choosable = 6;
+  bool is_selected = 7;
+  PlayableObjectStats playable_stats = 8;
+
+  string parent_id = 10;
+  string name = 11;
+  string display_name = 12;
+  string display_full_name = 13;
+  repeated string rules = 14;
+  string power = 15;
+  string toughness = 16;
+  string loyalty = 17;
+  string defense = 18;
+  string starting_loyalty = 19;
+  string starting_defense = 20;
+
+  repeated CardType card_types = 21;
+  repeated string sub_types = 22;
+  repeated SuperType super_types = 23;
+  ObjectColor color = 24;
+  ObjectColor frame_color = 25;
+  FrameStyle frame_style = 26;
+
+  repeated string mana_cost_left_str = 27;
+  repeated string mana_cost_right_str = 28;
+  int32 mana_value = 29;
+  Rarity rarity = 30;
+
+  MageObjectType mage_object_type = 31;
+  bool is_ability = 32;
+  AbilityType ability_type = 33;
+  bool is_token = 34;
+
+  CardViewProto ability = 35;
+  string image_file_name = 36;
+  int32 image_number = 37;
+
+  bool extra_deck_card = 38;
+  bool transformable = 39;
+  CardViewProto second_card_face = 40;
+  bool transformed = 41;
+
+  bool flip_card = 42;
+  bool face_down = 43;
+  string alternate_name = 44;
+
+  bool is_split_card = 45;
+  string left_split_name = 46;
+  string left_split_costs_str = 47;
+  repeated string left_split_rules = 48;
+  string left_split_type_line = 49;
+  string right_split_name = 50;
+  string right_split_costs_str = 51;
+  repeated string right_split_rules = 52;
+  string right_split_type_line = 53;
+
+  bool is_double_faced_card = 54;
+  ArtRect art_rect = 55;
+
+  repeated string targets = 56;
+  string paired_card = 57;
+  repeated string banded_cards = 58;
+  bool paid = 59;
+  repeated CounterViewProto counters = 60;
+
+  bool controlled_by_owner = 61;
+  Zone zone = 62;
+  bool rotate = 63;
+  bool hide_info = 64;
+
+  bool can_attack = 65;
+  bool can_block = 66;
+  bool in_viewer_only = 67;
+  repeated CardIcon card_icons = 68;
+
+  int32 original_power = 69;
+  int32 original_toughness = 70;
+  string original_color_identity = 71;
+  bool original_is_copy = 72;
+}
+
+message PermanentViewProto {
+  CardViewProto card = 1;
+  bool tapped = 2;
+  bool flipped = 3;
+  bool phased_in = 4;
+  bool summon_sick = 5;
+  int32 damage = 6;
+  repeated string abilities = 7;
+  bool controlled = 8;
+  string controller_name = 9;
+  string controller_id = 10;
+}
+
+message CardsViewProto {
+  map<string, CardViewProto> cards = 1;
+}
+
+message SimpleCardsViewProto {
+  map<string, SimpleCardViewProto> cards = 1;
+}
+
+message StackAbilityViewProto {
+  CardViewProto card = 1;
+  string ability_name = 2;
+  repeated string rules = 3;
+  CardViewProto source_card = 4;
+}
+
+message PlayerViewProto {
+  string player_id = 1;
+  string name = 2;
+  bool controlled = 3;
+  bool is_human = 4;
+  int32 life = 5;
+  repeated CounterViewProto counters = 6;
+  int32 wins = 7;
+  int32 wins_needed = 8;
+  int32 library_count = 9;
+  int32 hand_count = 10;
+  bool is_active = 11;
+  bool has_priority = 12;
+  bool timer_active = 13;
+  bool has_left = 14;
+  ManaPoolViewProto mana_pool = 15;
+  CardsViewProto graveyard = 16;
+  CardsViewProto exile = 17;
+  CardsViewProto sideboard = 18;
+  CardsViewProto helper_cards = 19;
+  map<string, PermanentViewProto> battlefield = 20;
+  CardViewProto top_card = 21;
+  UserDataViewProto user_data = 22;
+  repeated CommandObjectViewProto command_list = 23;
+  repeated string attachments = 24;
+  int32 states_saved_size = 25;
+  int64 priority_time_saved_ms = 26;
+  int32 priority_time_left_secs = 27;
+  int32 buffer_time_left = 28;
+  bool passed_turn = 29;
+  bool passed_until_end_of_turn = 30;
+  bool passed_until_next_main = 31;
+  bool passed_until_stack_resolved = 32;
+  bool passed_all_turns = 33;
+  bool passed_until_end_step_before_my_turn = 34;
+  bool monarch = 35;
+  bool initiative = 36;
+  repeated string designation_names = 37;
+}
+
+message CombatGroupViewProto {
+  repeated string attackers = 1;
+  repeated string blockers = 2;
+  repeated string blocked_by_blockers = 3;
+  string attacked_id = 4;
+  bool attacked_player = 5;
+}
+
+message ExileViewProto {
+  string id = 1;
+  string name = 2;
+  CardsViewProto cards = 3;
+}
+
+message RevealedViewProto {
+  string name = 1;
+  CardsViewProto cards = 2;
+}
+
+message LookedAtViewProto {
+  string name = 1;
+  SimpleCardsViewProto cards = 2;
+}
+
+message GameViewProto {
+  int32 priority_time = 1;
+  int32 buffer_time = 2;
+  repeated PlayerViewProto players = 3;
+  string my_player_id = 4;
+  CardsViewProto my_hand = 5;
+  CardsViewProto my_helper_emblems = 6;
+  map<string, SimpleCardsViewProto> opponent_hands = 7;
+  map<string, SimpleCardsViewProto> watched_hands = 8;
+  CardsViewProto stack = 9;
+  repeated ExileViewProto exiles = 10;
+  repeated RevealedViewProto revealed = 11;
+  repeated LookedAtViewProto looked_at = 12;
+  repeated RevealedViewProto companion = 13;
+  repeated CombatGroupViewProto combat = 14;
+  string phase = 15;
+  string step = 16;
+  string active_player_id = 17;
+  string active_player_name = 18;
+  string priority_player_name = 19;
+  int32 turn = 20;
+  bool special = 21;
+  bool rollback_turns_allowed = 22;
+  int32 total_errors_count = 23;
+  int32 total_effects_count = 24;
+  int32 game_cycle = 25;
+}
+
+message GameEndViewProto {
+  string game_id = 1;
+  repeated string winners = 2;
+  repeated string losers = 3;
+  string game_info = 4;
+  int32 life = 5;
+  bool you_won = 6;
+  repeated GameEndViewPlayerResultProto player_results = 7;
+}
+
+message GameEndViewPlayerResultProto {
+  string player_name = 1;
+  int32 life = 2;
+  bool is_winner = 3;
+}
+
+message CommandObjectViewProto {
+  string id = 1;
+  string name = 2;
+  string expansion_set_code = 3;
+  string card_number = 4;
+  repeated string rules = 5;
+  string image_file_name = 6;
+  int32 image_number = 7;
+
+  oneof command_type {
+    EmblemViewProto emblem = 10;
+    DungeonViewProto dungeon = 11;
+    PlaneViewProto plane = 12;
+    CommanderViewProto commander = 13;
+  }
+}
+
+message EmblemViewProto {
+  string id = 1;
+  string name = 2;
+  string source_name = 3;
+  string expansion_set_code = 4;
+  string card_number = 5;
+  repeated string rules = 6;
+}
+
+message DungeonViewProto {
+  string id = 1;
+  string name = 2;
+  string expansion_set_code = 3;
+  string card_number = 4;
+  repeated string rules = 5;
+  string current_room = 6;
+}
+
+message PlaneViewProto {
+  string id = 1;
+  string name = 2;
+  string expansion_set_code = 3;
+  string card_number = 4;
+  repeated string rules = 5;
+  string controller_id = 6;
+}
+
+message CommanderViewProto {
+  CardViewProto card = 1;
+  int32 commander_damage = 2;
+}
+
+message TableViewProto {
+  string table_id = 1;
+  string game_type = 2;
+  string controller_name = 3;
+  string deck_type = 4;
+  string additional_info = 5;
+  string table_state = 6;
+  int64 create_time = 7;
+  int64 start_time = 8;
+  int64 end_time = 9;
+  bool is_tourney = 10;
+  string tourney_type = 11;
+  repeated SeatViewProto seats = 12;
+  bool joinable = 13;
+  bool watchable = 14;
+  bool limited = 15;
+  bool rated = 16;
+  string password_status = 17;
+  SkillLevel skill_level = 18;
+  bool quit_ratio = 19;
+  int32 minimum_rating = 20;
+  string game_id = 21;
+}
+
+message SeatViewProto {
+  int32 seat_number = 1;
+  string player_name = 2;
+  string player_type = 3;
+  bool is_empty = 4;
+}
+
+message MatchViewProto {
+  string match_id = 1;
+  string match_name = 2;
+  string game_type = 3;
+  string deck_type = 4;
+  repeated string players = 5;
+  string result = 6;
+  int64 start_time = 7;
+  int64 end_time = 8;
+  bool rated = 9;
+  SkillLevel skill_level = 10;
+  int32 wins_needed = 11;
+  repeated MatchPlayerViewProto match_players = 12;
+}
+
+message MatchPlayerViewProto {
+  string name = 1;
+  int32 wins = 2;
+  string quit_status = 3;
+}
+
+message RoomUsersViewProto {
+  string room_id = 1;
+  repeated UserViewProto users = 2;
+}
+
+message UserViewProto {
+  string user_name = 1;
+  string host = 2;
+  string session_id = 3;
+  int64 time_connected = 4;
+  int64 last_activity = 5;
+  string game_info = 6;
+  string user_state = 7;
+  int64 mute_chat_until = 8;
+  string client_version = 9;
+  string email = 10;
+  string user_id_str = 11;
+}
+
+message UsersViewProto {
+  repeated UserViewProto users = 1;
+}
+
+message UserDataViewProto {
+  string avatar_id = 1;
+  int32 group_id = 2;
+  bool show_absent_mana = 3;
+  string flag_name = 4;
+  bool use_premium_themes = 5;
+  repeated string additional_data = 6;
+}
+
+message TournamentViewProto {
+  string tournament_id = 1;
+  string tournament_name = 2;
+  string tournament_type = 3;
+  string tournament_state = 4;
+  int32 round_number = 5;
+  repeated TournamentPlayerViewProto players = 6;
+  repeated RoundViewProto rounds = 7;
+  int64 start_time = 8;
+  int64 end_time = 9;
+  bool running = 10;
+  string booster_info = 11;
+}
+
+message TournamentPlayerViewProto {
+  string player_id = 1;
+  string name = 2;
+  string state = 3;
+  string results = 4;
+  int32 points = 5;
+  bool eliminated = 6;
+  bool quit = 7;
+  string player_type = 8;
+  bool disconnected = 9;
+}
+
+message TournamentGameViewProto {
+  string game_id = 1;
+  string table_id = 2;
+  string state = 3;
+  repeated string players = 4;
+  string result = 5;
+}
+
+message RoundViewProto {
+  int32 round_number = 1;
+  repeated TournamentGameViewProto games = 2;
+}
+
+message TournamentTypeViewProto {
+  string name = 1;
+  int32 min_players = 2;
+  int32 max_players = 3;
+  int32 num_boosters = 4;
+  bool draft = 5;
+  bool limited = 6;
+  bool cubed = 7;
+  bool elimination = 8;
+  bool random = 9;
+  bool rich_man = 10;
+  bool jumpstart = 11;
+}
+
+message DraftViewProto {
+  string draft_id = 1;
+  CardsViewProto picks = 2;
+  CardsViewProto booster = 3;
+  int32 card_count = 4;
+  int32 booster_number = 5;
+  int32 card_number = 6;
+  int32 timeout = 7;
+  string marked_card = 8;
+}
+
+message DraftPickViewProto {
+  CardsViewProto booster = 1;
+  CardsViewProto picks = 2;
+  int32 timeout = 3;
+  string marked_card = 4;
+}
+
+message DeckViewProto {
+  string name = 1;
+  CardsViewProto main_deck = 2;
+  CardsViewProto sideboard = 3;
+}
+
+message GameTypeViewProto {
+  string name = 1;
+  int32 min_players = 2;
+  int32 max_players = 3;
+  int32 num_teams = 4;
+  int32 players_per_team = 5;
+  bool use_range = 6;
+  bool use_attack_option = 7;
+}
+
+message AbilityPickerViewProto {
+  repeated AbilityViewProto choices = 1;
+  bool optional = 2;
+  string message = 3;
+}
+
+message AbilityViewProto {
+  string id = 1;
+  string name = 2;
+  string rule = 3;
+  string mana_cost = 4;
+  CardViewProto source_card = 5;
+}
+
+message GameClientMessageProto {
+  GameViewProto game_view = 1;
+  CardsViewProto cards = 2;
+  CardsViewProto cards2 = 3;
+  string message = 4;
+  bool options_flag = 5;
+  repeated string options = 6;
+  int32 min = 7;
+  int32 max = 8;
+  map<string, string> choices = 9;
+}
+
+message TableClientMessageProto {
+  string table_id = 1;
+  DeckViewProto deck = 2;
+  int32 time = 3;
+  bool limited = 4;
+}
+
+message DraftClientMessageProto {
+  DraftViewProto draft_view = 1;
+  int32 timeout = 2;
+}
+
+message UserRequestMessageProto {
+  string title = 1;
+  string message = 2;
+  string button1_text = 3;
+  string button2_text = 4;
+  string type = 5;
+  string user_name = 6;
+  string matched_id = 7;
+}
+
+message ChatMessageProto {
+  string username = 1;
+  int64 time = 2;
+  string turn_info = 3;
+  string message = 4;
+  MessageColor color = 5;
+  SoundToPlay sound_to_play = 6;
+  MessageType message_type = 7;
+}

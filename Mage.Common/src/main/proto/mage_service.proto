@@ -1,0 +1,641 @@
+syntax = "proto3";
+
+package mage.proto;
+
+option java_package = "mage.proto";
+option java_outer_classname = "MageServiceProtos";
+option java_multiple_files = true;
+
+import "mage_common.proto";
+import "mage_views.proto";
+
+// Main gRPC service replacing JBoss remoting
+service MageService {
+  // Auth
+  rpc AuthRegister(AuthRegisterRequest) returns (BoolResponse);
+  rpc AuthSendTokenToEmail(AuthSendTokenRequest) returns (BoolResponse);
+  rpc AuthResetPassword(AuthResetPasswordRequest) returns (BoolResponse);
+
+  // Connection
+  rpc ConnectUser(ConnectUserRequest) returns (BoolResponse);
+  rpc ConnectAdmin(ConnectAdminRequest) returns (BoolResponse);
+  rpc ConnectSetUserData(ConnectSetUserDataRequest) returns (BoolResponse);
+  rpc Ping(PingRequest) returns (BoolResponse);
+
+  // Server info
+  rpc GetServerState(Empty) returns (ServerStateResponse);
+  rpc GetMainRoomId(Empty) returns (UuidResponse);
+  rpc GetPromotionMessages(SessionRequest) returns (PromotionMessagesResponse);
+
+  // Feedback
+  rpc AddFeedbackMessage(FeedbackRequest) returns (Empty);
+
+  // Room
+  rpc RoomGetUsers(RoomRequest) returns (RoomUsersResponse);
+  rpc RoomGetFinishedMatches(RoomRequest) returns (MatchListResponse);
+  rpc RoomCreateTable(CreateTableRequest) returns (TableViewProto);
+  rpc RoomCreateTournament(CreateTournamentRequest) returns (TableViewProto);
+  rpc RoomJoinTable(JoinTableRequest) returns (BoolResponse);
+  rpc RoomJoinTournament(JoinTournamentRequest) returns (BoolResponse);
+  rpc RoomWatchTable(WatchTableRequest) returns (BoolResponse);
+  rpc RoomWatchTournament(WatchTournamentRequest) returns (BoolResponse);
+  rpc RoomLeaveTableOrTournament(LeaveTableRequest) returns (BoolResponse);
+  rpc RoomGetTableById(GetTableRequest) returns (TableViewProto);
+  rpc RoomGetAllTables(RoomRequest) returns (TableListResponse);
+
+  // Table
+  rpc TableSwapSeats(SwapSeatsRequest) returns (Empty);
+  rpc TableRemove(RemoveTableRequest) returns (Empty);
+  rpc TableIsOwner(TableOwnerRequest) returns (BoolResponse);
+
+  // Deck
+  rpc DeckSubmit(DeckSubmitRequest) returns (BoolResponse);
+  rpc DeckSave(DeckSaveRequest) returns (Empty);
+
+  // Chat
+  rpc ChatSendMessage(ChatSendRequest) returns (Empty);
+  rpc ChatJoin(ChatJoinRequest) returns (Empty);
+  rpc ChatLeave(ChatLeaveRequest) returns (Empty);
+  rpc ChatFindByGame(UuidRequest) returns (UuidResponse);
+  rpc ChatFindByTable(UuidRequest) returns (UuidResponse);
+  rpc ChatFindByTournament(UuidRequest) returns (UuidResponse);
+  rpc ChatFindByRoom(UuidRequest) returns (UuidResponse);
+
+  // Match
+  rpc MatchStart(MatchStartRequest) returns (BoolResponse);
+  rpc MatchQuit(MatchQuitRequest) returns (Empty);
+
+  // Game
+  rpc GameJoin(GameSessionRequest) returns (Empty);
+  rpc GameGetView(GameGetViewRequest) returns (GameViewProto);
+  rpc GameWatchStart(GameSessionRequest) returns (BoolResponse);
+  rpc GameWatchStop(GameSessionRequest) returns (Empty);
+
+  // Player input
+  rpc SendPlayerUUID(PlayerUuidRequest) returns (Empty);
+  rpc SendPlayerString(PlayerStringRequest) returns (Empty);
+  rpc SendPlayerBoolean(PlayerBooleanRequest) returns (Empty);
+  rpc SendPlayerInteger(PlayerIntegerRequest) returns (Empty);
+  rpc SendPlayerManaType(PlayerManaTypeRequest) returns (Empty);
+  rpc SendPlayerAction(PlayerActionRequest) returns (Empty);
+
+  // Draft
+  rpc SendDraftCardPick(DraftPickRequest) returns (DraftPickViewProto);
+  rpc SendDraftCardMark(DraftMarkRequest) returns (Empty);
+  rpc DraftJoin(DraftSessionRequest) returns (Empty);
+  rpc DraftQuit(DraftSessionRequest) returns (Empty);
+  rpc DraftSetBoosterLoaded(DraftSessionRequest) returns (Empty);
+
+  // Tournament
+  rpc TournamentStart(TournamentStartRequest) returns (BoolResponse);
+  rpc TournamentJoin(TournamentSessionRequest) returns (Empty);
+  rpc TournamentQuit(TournamentSessionRequest) returns (Empty);
+  rpc TournamentFindById(UuidRequest) returns (TournamentViewProto);
+
+  // Replay
+  rpc ReplayInit(GameSessionRequest) returns (Empty);
+  rpc ReplayStart(GameSessionRequest) returns (Empty);
+  rpc ReplayStop(GameSessionRequest) returns (Empty);
+  rpc ReplayNext(GameSessionRequest) returns (Empty);
+  rpc ReplayPrevious(GameSessionRequest) returns (Empty);
+  rpc ReplaySkipForward(ReplaySkipRequest) returns (Empty);
+
+  // Cheat
+  rpc CheatShow(CheatShowRequest) returns (Empty);
+
+  // Admin
+  rpc AdminGetUsers(SessionRequest) returns (UserListResponse);
+  rpc AdminDisconnectUser(AdminUserRequest) returns (Empty);
+  rpc AdminEndUserSession(AdminUserRequest) returns (Empty);
+  rpc AdminMuteUser(AdminMuteRequest) returns (Empty);
+  rpc AdminLockUser(AdminLockRequest) returns (Empty);
+  rpc AdminActivateUser(AdminActivateRequest) returns (Empty);
+  rpc AdminToggleActivateUser(AdminToggleActivateRequest) returns (Empty);
+  rpc AdminTableRemove(AdminTableRemoveRequest) returns (Empty);
+  rpc AdminSendBroadcastMessage(AdminBroadcastRequest) returns (Empty);
+
+  // Server-to-client callback stream
+  rpc SubscribeToCallbacks(SubscribeRequest) returns (stream ServerCallback);
+}
+
+// Request/Response messages
+
+message Empty {}
+
+message BoolResponse {
+  bool success = 1;
+  string error_message = 2;
+}
+
+message UuidResponse {
+  string uuid = 1;
+}
+
+message UuidRequest {
+  string uuid = 1;
+}
+
+message SessionRequest {
+  string session_id = 1;
+}
+
+message RoomRequest {
+  string room_id = 1;
+}
+
+// Auth
+message AuthRegisterRequest {
+  string session_id = 1;
+  string user_name = 2;
+  string password = 3;
+  string email = 4;
+}
+
+message AuthSendTokenRequest {
+  string session_id = 1;
+  string email = 2;
+}
+
+message AuthResetPasswordRequest {
+  string session_id = 1;
+  string email = 2;
+  string auth_token = 3;
+  string password = 4;
+}
+
+// Connection
+message ConnectUserRequest {
+  string user_name = 1;
+  string password = 2;
+  string session_id = 3;
+  string restore_session_id = 4;
+  MageVersion version = 5;
+  string user_id_str = 6;
+}
+
+message ConnectAdminRequest {
+  string password = 1;
+  string session_id = 2;
+  MageVersion version = 3;
+}
+
+message ConnectSetUserDataRequest {
+  string user_name = 1;
+  string session_id = 2;
+  UserDataProto user_data = 3;
+  string client_version = 4;
+  string user_id_str = 5;
+}
+
+message UserDataProto {
+  int32 avatar_id = 1;
+  int32 group_id = 2;
+  bool show_absent_mana = 3;
+  bool allow_request_show_hand_cards = 4;
+  bool confirm_empty_mana_pool = 5;
+  string user_skip_priority_steps = 6;
+  string flag_name = 7;
+  bool ask_move_to_grave_order = 8;
+  bool mana_auto_payment = 9;
+  bool pass_priority_auto_undo = 10;
+  bool show_own_cards_detailed = 11;
+  string user_target_ids = 12;
+}
+
+message PingRequest {
+  string session_id = 1;
+  string ping_info = 2;
+}
+
+// Server state
+message ServerStateResponse {
+  repeated GameTypeViewProto game_types = 1;
+  repeated TournamentTypeViewProto tournament_types = 2;
+  repeated string player_types = 3;
+  repeated string deck_types = 4;
+  repeated string draft_cubes = 5;
+  bool testmode = 6;
+  MageVersion version = 7;
+}
+
+message PromotionMessagesResponse {
+  repeated string messages = 1;
+}
+
+// Feedback
+message FeedbackRequest {
+  string session_id = 1;
+  string username = 2;
+  string title = 3;
+  string type = 4;
+  string message = 5;
+  string email = 6;
+}
+
+// Room/Table
+message RoomUsersResponse {
+  repeated RoomUsersViewProto room_users = 1;
+}
+
+message MatchListResponse {
+  repeated MatchViewProto matches = 1;
+}
+
+message TableListResponse {
+  repeated TableViewProto tables = 1;
+}
+
+message CreateTableRequest {
+  string session_id = 1;
+  string room_id = 2;
+  MatchOptionsProto match_options = 3;
+}
+
+message MatchOptionsProto {
+  string name = 1;
+  string game_type = 2;
+  string deck_type = 3;
+  bool limited = 4;
+  bool rated = 5;
+  SkillLevel skill_level = 6;
+  int32 wins_needed = 7;
+  int32 free_mulligan = 8;
+  int32 player_range = 9;
+  int32 attack_option = 10;
+  string password = 11;
+  bool rollback_turns_allowed = 12;
+  bool spectators_allowed = 13;
+  bool planeChase = 14;
+  repeated string player_types = 15;
+  int32 num_seats = 16;
+  int32 quit_ratio = 17;
+  int32 minimum_rating = 18;
+  int32 edh_power_level = 19;
+  int32 priority_time = 20;
+}
+
+message CreateTournamentRequest {
+  string session_id = 1;
+  string room_id = 2;
+  TournamentOptionsProto tournament_options = 3;
+}
+
+message TournamentOptionsProto {
+  string name = 1;
+  string tournament_type = 2;
+  string deck_type = 3;
+  bool limited = 4;
+  bool rated = 5;
+  SkillLevel skill_level = 6;
+  int32 num_seats = 7;
+  repeated string sets = 8;
+  string match_options = 9;
+  string password = 10;
+  bool watch_allowed = 11;
+  int32 quit_ratio = 12;
+  int32 minimum_rating = 13;
+}
+
+message JoinTableRequest {
+  string session_id = 1;
+  string room_id = 2;
+  string table_id = 3;
+  string name = 4;
+  PlayerType player_type = 5;
+  int32 skill = 6;
+  DeckCardListsProto deck_list = 7;
+  string password = 8;
+}
+
+message DeckCardListsProto {
+  string name = 1;
+  repeated string cards = 2;
+  repeated string sideboard = 3;
+}
+
+message JoinTournamentRequest {
+  string session_id = 1;
+  string room_id = 2;
+  string table_id = 3;
+  string name = 4;
+  PlayerType player_type = 5;
+  int32 skill = 6;
+  DeckCardListsProto deck_list = 7;
+  string password = 8;
+}
+
+message WatchTableRequest {
+  string session_id = 1;
+  string room_id = 2;
+  string table_id = 3;
+}
+
+message WatchTournamentRequest {
+  string session_id = 1;
+  string table_id = 2;
+}
+
+message LeaveTableRequest {
+  string session_id = 1;
+  string room_id = 2;
+  string table_id = 3;
+}
+
+message GetTableRequest {
+  string room_id = 1;
+  string table_id = 2;
+}
+
+message SwapSeatsRequest {
+  string session_id = 1;
+  string room_id = 2;
+  string table_id = 3;
+  int32 seat_num1 = 4;
+  int32 seat_num2 = 5;
+}
+
+message RemoveTableRequest {
+  string session_id = 1;
+  string room_id = 2;
+  string table_id = 3;
+}
+
+message TableOwnerRequest {
+  string session_id = 1;
+  string room_id = 2;
+  string table_id = 3;
+}
+
+// Deck
+message DeckSubmitRequest {
+  string session_id = 1;
+  string table_id = 2;
+  DeckCardListsProto deck_list = 3;
+}
+
+message DeckSaveRequest {
+  string session_id = 1;
+  string table_id = 2;
+  DeckCardListsProto deck_list = 3;
+}
+
+// Chat
+message ChatSendRequest {
+  string chat_id = 1;
+  string user_name = 2;
+  string message = 3;
+}
+
+message ChatJoinRequest {
+  string chat_id = 1;
+  string session_id = 2;
+  string user_name = 3;
+}
+
+message ChatLeaveRequest {
+  string chat_id = 1;
+  string session_id = 2;
+}
+
+// Match/Game
+message MatchStartRequest {
+  string session_id = 1;
+  string room_id = 2;
+  string table_id = 3;
+}
+
+message MatchQuitRequest {
+  string game_id = 1;
+  string session_id = 2;
+}
+
+message GameSessionRequest {
+  string game_id = 1;
+  string session_id = 2;
+}
+
+message GameGetViewRequest {
+  string game_id = 1;
+  string session_id = 2;
+  string player_id = 3;
+}
+
+// Player input
+message PlayerUuidRequest {
+  string game_id = 1;
+  string session_id = 2;
+  string data = 3;
+}
+
+message PlayerStringRequest {
+  string game_id = 1;
+  string session_id = 2;
+  string data = 3;
+}
+
+message PlayerBooleanRequest {
+  string game_id = 1;
+  string session_id = 2;
+  bool data = 3;
+}
+
+message PlayerIntegerRequest {
+  string game_id = 1;
+  string session_id = 2;
+  int32 data = 3;
+}
+
+message PlayerManaTypeRequest {
+  string game_id = 1;
+  string player_id = 2;
+  string session_id = 3;
+  ManaType data = 4;
+}
+
+message PlayerActionRequest {
+  PlayerAction action = 1;
+  string game_id = 2;
+  string session_id = 3;
+  bytes data = 4;  // serialized action-specific data
+}
+
+// Draft
+message DraftPickRequest {
+  string draft_id = 1;
+  string session_id = 2;
+  string card_id = 3;
+  repeated string hidden_cards = 4;
+}
+
+message DraftMarkRequest {
+  string draft_id = 1;
+  string session_id = 2;
+  string card_id = 3;
+}
+
+message DraftSessionRequest {
+  string draft_id = 1;
+  string session_id = 2;
+}
+
+// Tournament
+message TournamentStartRequest {
+  string session_id = 1;
+  string room_id = 2;
+  string table_id = 3;
+}
+
+message TournamentSessionRequest {
+  string tournament_id = 1;
+  string session_id = 2;
+}
+
+// Replay
+message ReplaySkipRequest {
+  string game_id = 1;
+  string session_id = 2;
+  int32 moves = 3;
+}
+
+// Cheat
+message CheatShowRequest {
+  string game_id = 1;
+  string session_id = 2;
+  string player_id = 3;
+}
+
+// Admin
+message UserListResponse {
+  repeated UserViewProto users = 1;
+}
+
+message AdminUserRequest {
+  string session_id = 1;
+  string user_session_id = 2;
+}
+
+message AdminMuteRequest {
+  string session_id = 1;
+  string user_name = 2;
+  int64 duration_minutes = 3;
+}
+
+message AdminLockRequest {
+  string session_id = 1;
+  string user_name = 2;
+  int64 duration_minutes = 3;
+}
+
+message AdminActivateRequest {
+  string session_id = 1;
+  string user_name = 2;
+  bool active = 3;
+}
+
+message AdminToggleActivateRequest {
+  string session_id = 1;
+  string user_name = 2;
+}
+
+message AdminTableRemoveRequest {
+  string session_id = 1;
+  string table_id = 2;
+}
+
+message AdminBroadcastRequest {
+  string session_id = 1;
+  string message = 2;
+}
+
+// Callback subscription
+message SubscribeRequest {
+  string session_id = 1;
+}
+
+// Server-to-client callback (replaces ClientCallback)
+message ServerCallback {
+  int32 message_id = 1;
+  string object_id = 2;
+  CallbackMethod method = 3;
+
+  oneof payload {
+    ChatMessageProto chat_message = 10;
+    GameViewProto game_view = 11;
+    GameClientMessageProto game_client_message = 12;
+    TableClientMessageProto table_client_message = 13;
+    DraftClientMessageProto draft_client_message = 14;
+    TournamentViewProto tournament_view = 15;
+    DraftViewProto draft_view = 16;
+    DraftPickViewProto draft_pick_view = 17;
+    UserRequestMessageProto user_request_message = 18;
+    GameEndViewProto game_end_view = 19;
+    TableViewProto table_view = 20;
+    string string_message = 21;
+    bytes raw_data = 22;  // fallback for complex payloads
+  }
+}
+
+enum CallbackMethod {
+  CALLBACK_UNSPECIFIED = 0;
+
+  // messages
+  CHATMESSAGE = 1;
+  SHOW_USERMESSAGE = 2;
+  SERVER_MESSAGE = 3;
+
+  // table
+  JOINED_TABLE = 4;
+
+  // tournament
+  START_TOURNAMENT = 5;
+  TOURNAMENT_INIT = 6;
+  TOURNAMENT_UPDATE = 7;
+  TOURNAMENT_OVER = 8;
+
+  // draft/sideboard
+  START_DRAFT = 9;
+  SIDEBOARD = 10;
+  CONSTRUCT = 11;
+  DRAFT_OVER = 12;
+  DRAFT_INIT = 13;
+  DRAFT_PICK = 14;
+  DRAFT_UPDATE = 15;
+
+  // watch
+  SHOW_TOURNAMENT = 16;
+  WATCHGAME = 17;
+
+  // in-game actions
+  VIEW_LIMITED_DECK = 18;
+  VIEW_SIDEBOARD = 19;
+
+  // other
+  USER_REQUEST_DIALOG = 20;
+  GAME_REDRAW_GUI = 21;
+
+  // game
+  START_GAME = 22;
+  GAME_INIT = 23;
+  GAME_UPDATE_AND_INFORM = 24;
+  GAME_INFORM_PERSONAL = 25;
+  GAME_ERROR = 26;
+  GAME_UPDATE = 27;
+  GAME_TARGET = 28;
+  GAME_CHOOSE_ABILITY = 29;
+  GAME_CHOOSE_PILE = 30;
+  GAME_CHOOSE_CHOICE = 31;
+  GAME_ASK = 32;
+  GAME_SELECT = 33;
+  GAME_PLAY_MANA = 34;
+  GAME_PLAY_XMANA = 35;
+  GAME_GET_AMOUNT = 36;
+  GAME_GET_MULTI_AMOUNT = 37;
+  GAME_OVER = 38;
+  END_GAME_INFO = 39;
+
+  // replay
+  REPLAY_GAME = 40;
+  REPLAY_INIT = 41;
+  REPLAY_UPDATE = 42;
+  REPLAY_DONE = 43;
+}
