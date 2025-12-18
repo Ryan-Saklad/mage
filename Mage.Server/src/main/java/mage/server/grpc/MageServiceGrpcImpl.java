@@ -31,11 +31,12 @@ import mage.view.*;
 import org.apache.log4j.Logger;
 
 import java.security.SecureRandom;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-
-import static mage.server.grpc.ProtoConverter.*;
+import java.util.Optional;
 
 /**
  * gRPC implementation of the MageService, replacing JBoss remoting.
@@ -192,7 +193,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
     @Override
     public void connectUser(ConnectUserRequest request, StreamObserver<BoolResponse> responseObserver) {
         try {
-            MageVersion version = fromProtoVersion(request.getVersion());
+            MageVersion version = ProtoConverter.fromProtoVersion(request.getVersion());
             if (version.compareTo(Main.getVersion()) != 0) {
                 responseObserver.onNext(BoolResponse.newBuilder()
                         .setSuccess(false)
@@ -222,7 +223,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
     @Override
     public void connectAdmin(ConnectAdminRequest request, StreamObserver<BoolResponse> responseObserver) {
         try {
-            MageVersion version = fromProtoVersion(request.getVersion());
+            MageVersion version = ProtoConverter.fromProtoVersion(request.getVersion());
             if (version.compareTo(Main.getVersion()) != 0) {
                 responseObserver.onNext(BoolResponse.newBuilder()
                         .setSuccess(false)
@@ -260,7 +261,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
                 return;
             }
 
-            UserData userData = fromProtoUserData(request.getUserData());
+            UserData userData = ProtoConverter.fromProtoUserData(request.getUserData());
             boolean success = managerFactory.sessionManager().setUserData(
                     request.getUserName(),
                     request.getSessionId(),
@@ -287,20 +288,20 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
     // Server info methods
 
     @Override
-    public void getServerState(Empty request, StreamObserver<ServerStateResponse> responseObserver) {
+    public void getServerState(mage.proto.Empty request, StreamObserver<mage.proto.ServerStateResponse> responseObserver) {
         try {
             Thread.sleep(1000); // DDoS protection
 
-            ServerStateResponse.Builder builder = ServerStateResponse.newBuilder()
+            mage.proto.ServerStateResponse.Builder builder = mage.proto.ServerStateResponse.newBuilder()
                     .setTestmode(testMode)
-                    .setVersion(toProtoVersion(Main.getVersion()));
+                    .setVersion(ProtoConverter.toProtoVersion(Main.getVersion()));
 
-            for (GameFactory.GameTypeInfo gameType : GameFactory.instance.getGameTypes()) {
-                builder.addGameTypes(toProtoGameTypeView(gameType));
+            for (GameTypeView gameType : GameFactory.instance.getGameTypes()) {
+                builder.addGameTypes(ProtoConverter.toProtoGameTypeView(gameType));
             }
 
-            for (TournamentFactory.TournamentTypeInfo tournamentType : TournamentFactory.instance.getTournamentTypes()) {
-                builder.addTournamentTypes(toProtoTournamentTypeView(tournamentType));
+            for (TournamentTypeView tournamentType : TournamentFactory.instance.getTournamentTypes()) {
+                builder.addTournamentTypes(ProtoConverter.toProtoTournamentTypeView(tournamentType));
             }
 
             for (PlayerType playerType : PlayerFactory.instance.getPlayerTypes()) {
@@ -323,35 +324,11 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
         }
     }
 
-    private GameTypeViewProto toProtoGameTypeView(GameFactory.GameTypeInfo info) {
-        return GameTypeViewProto.newBuilder()
-                .setName(info.getName())
-                .setMinPlayers(info.getMinPlayers())
-                .setMaxPlayers(info.getMaxPlayers())
-                .build();
-    }
-
-    private TournamentTypeViewProto toProtoTournamentTypeView(TournamentFactory.TournamentTypeInfo info) {
-        return TournamentTypeViewProto.newBuilder()
-                .setName(info.getName())
-                .setMinPlayers(info.getMinPlayers())
-                .setMaxPlayers(info.getMaxPlayers())
-                .setNumBoosters(info.getNumBoosters())
-                .setDraft(info.isDraft())
-                .setLimited(info.isLimited())
-                .setCubed(info.isCubed())
-                .setElimination(info.isElimination())
-                .setRandom(info.isRandom())
-                .setRichMan(info.isRichMan())
-                .setJumpstart(info.isJumpstart())
-                .build();
-    }
-
     @Override
     public void getMainRoomId(Empty request, StreamObserver<UuidResponse> responseObserver) {
         try {
             UUID roomId = managerFactory.gamesRoomManager().getMainRoomId();
-            responseObserver.onNext(UuidResponse.newBuilder().setUuid(toProtoUuid(roomId)).build());
+            responseObserver.onNext(UuidResponse.newBuilder().setUuid(ProtoConverter.toProtoUuid(roomId)).build());
             responseObserver.onCompleted();
         } catch (Exception e) {
             responseObserver.onError(e);
@@ -412,7 +389,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             RoomUsersResponse.Builder builder = RoomUsersResponse.newBuilder();
             if (room.isPresent()) {
                 for (RoomUsersView view : room.get().getRoomUsersInfo()) {
-                    builder.addRoomUsers(toProtoRoomUsersView(view));
+                    builder.addRoomUsers(ProtoConverter.toProtoRoomUsersView(view));
                 }
             }
             responseObserver.onNext(builder.build());
@@ -430,7 +407,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             managerFactory.gamesRoomManager().getRoom(roomId).ifPresent(room -> {
                 for (MatchView view : room.getFinished()) {
-                    builder.addMatches(toProtoMatchView(view));
+                    builder.addMatches(ProtoConverter.toProtoMatchView(view));
                 }
             });
 
@@ -449,7 +426,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
 
             managerFactory.gamesRoomManager().getRoom(roomId).ifPresent(room -> {
                 for (TableView view : room.getTables()) {
-                    builder.addTables(toProtoTableView(view));
+                    builder.addTables(ProtoConverter.toProtoTableView(view));
                 }
             });
 
@@ -470,7 +447,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             if (room.isPresent()) {
                 Optional<TableView> table = room.get().getTable(tableId);
                 if (table.isPresent()) {
-                    responseObserver.onNext(toProtoTableView(table.get()));
+                    responseObserver.onNext(ProtoConverter.toProtoTableView(table.get()));
                     responseObserver.onCompleted();
                     return;
                 }
@@ -506,7 +483,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             Optional<GamesRoom> room = managerFactory.gamesRoomManager().getRoom(roomId);
             if (room.isPresent()) {
                 TableView table = room.get().createTable(userId, options);
-                responseObserver.onNext(toProtoTableView(table));
+                responseObserver.onNext(ProtoConverter.toProtoTableView(table));
             } else {
                 responseObserver.onNext(TableViewProto.getDefaultInstance());
             }
@@ -561,7 +538,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             Optional<GamesRoom> room = managerFactory.gamesRoomManager().getRoom(roomId);
             if (room.isPresent()) {
                 TableView table = room.get().createTournamentTable(userId, options);
-                responseObserver.onNext(toProtoTableView(table));
+                responseObserver.onNext(ProtoConverter.toProtoTableView(table));
             } else {
                 responseObserver.onNext(TableViewProto.getDefaultInstance());
             }
@@ -980,7 +957,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
         try {
             UUID gameId = fromProtoUuid(request.getUuid());
             UUID chatId = managerFactory.gameManager().getChatId(gameId).orElse(null);
-            responseObserver.onNext(UuidResponse.newBuilder().setUuid(toProtoUuid(chatId)).build());
+            responseObserver.onNext(UuidResponse.newBuilder().setUuid(ProtoConverter.toProtoUuid(chatId)).build());
             responseObserver.onCompleted();
         } catch (Exception e) {
             responseObserver.onError(e);
@@ -992,7 +969,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
         try {
             UUID tableId = fromProtoUuid(request.getUuid());
             UUID chatId = managerFactory.tableManager().getChatId(tableId).orElse(null);
-            responseObserver.onNext(UuidResponse.newBuilder().setUuid(toProtoUuid(chatId)).build());
+            responseObserver.onNext(UuidResponse.newBuilder().setUuid(ProtoConverter.toProtoUuid(chatId)).build());
             responseObserver.onCompleted();
         } catch (Exception e) {
             responseObserver.onError(e);
@@ -1004,7 +981,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
         try {
             UUID tournamentId = fromProtoUuid(request.getUuid());
             UUID chatId = managerFactory.tournamentManager().getChatId(tournamentId).orElse(null);
-            responseObserver.onNext(UuidResponse.newBuilder().setUuid(toProtoUuid(chatId)).build());
+            responseObserver.onNext(UuidResponse.newBuilder().setUuid(ProtoConverter.toProtoUuid(chatId)).build());
             responseObserver.onCompleted();
         } catch (Exception e) {
             responseObserver.onError(e);
@@ -1017,7 +994,7 @@ public class MageServiceGrpcImpl extends MageServiceGrpc.MageServiceImplBase {
             UUID roomId = fromProtoUuid(request.getUuid());
             Optional<GamesRoom> room = managerFactory.gamesRoomManager().getRoom(roomId);
             UUID chatId = room.map(GamesRoom::getChatId).orElse(null);
-            responseObserver.onNext(UuidResponse.newBuilder().setUuid(toProtoUuid(chatId)).build());
+            responseObserver.onNext(UuidResponse.newBuilder().setUuid(ProtoConverter.toProtoUuid(chatId)).build());
             responseObserver.onCompleted();
         } catch (Exception e) {
             responseObserver.onError(e);

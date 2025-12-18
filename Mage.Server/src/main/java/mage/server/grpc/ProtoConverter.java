@@ -1,20 +1,12 @@
 package mage.server.grpc;
 
 import mage.ObjectColor;
-import mage.abilities.icon.CardIcon;
-import mage.abilities.icon.CardIconImpl;
-import mage.abilities.icon.CardIconType;
 import mage.cards.FrameStyle;
 import mage.cards.decks.DeckCardLists;
-import mage.constants.*;
-import mage.counters.Counter;
 import mage.players.PlayerType;
-import mage.players.net.UserData;
-import mage.proto.*;
-import mage.view.*;
-
-import java.util.*;
-import java.util.stream.Collectors;
+import mage.view.ChatMessage;
+import mage.view.CounterView;
+import mage.view.ManaPoolView;
 
 /**
  * Utility class for converting between Java view objects and Protocol Buffer messages.
@@ -28,12 +20,78 @@ public final class ProtoConverter {
     // UUID Conversions
     // ============================================================================
 
-    public static String toProtoUuid(UUID uuid) {
+    public static String toProtoUuid(java.util.UUID uuid) {
         return uuid != null ? uuid.toString() : "";
     }
 
-    public static UUID fromProtoUuid(String uuid) {
-        return uuid != null && !uuid.isEmpty() ? UUID.fromString(uuid) : null;
+    public static java.util.UUID fromProtoUuid(String uuid) {
+        return uuid != null && !uuid.isEmpty() ? java.util.UUID.fromString(uuid) : null;
+    }
+
+    // ============================================================================
+    // MageVersion Conversions
+    // ============================================================================
+
+    public static mage.utils.MageVersion fromProtoVersion(mage.proto.MageVersion proto) {
+        if (proto == null) return null;
+        return new mage.utils.MageVersion(
+                proto.getMajor(),
+                proto.getMinor(),
+                proto.getRelease(),
+                proto.getReleaseInfo()
+        );
+    }
+
+    public static mage.proto.MageVersion toProtoVersion(mage.utils.MageVersion version) {
+        if (version == null) return mage.proto.MageVersion.getDefaultInstance();
+        return mage.proto.MageVersion.newBuilder()
+                .setMajor(version.getMajor())
+                .setMinor(version.getMinor())
+                .setRelease(version.getRelease())
+                .setReleaseInfo(version.getReleaseInfo() != null ? version.getReleaseInfo() : "")
+                .build();
+    }
+
+    // ============================================================================
+    // UserData Conversions
+    // ============================================================================
+
+    public static mage.players.net.UserData fromProtoUserData(mage.proto.UserDataProto proto) {
+        if (proto == null) return null;
+        mage.players.net.UserData userData = new mage.players.net.UserData(
+                mage.players.net.UserGroup.DEFAULT,
+                proto.getAvatarId(),
+                proto.getShowAbilityPickerForced(),
+                proto.getAllowRequestHandToAll(),
+                proto.getConfirmEmptyManaPool(),
+                proto.getUserSkipPrioritySteps() != null ? proto.getUserSkipPrioritySteps() : "",
+                proto.getFlagName(),
+                proto.getAskMoveToGraveOrder(),
+                proto.getManaPoolAutomatic(),
+                proto.getManaPoolAutomaticRestricted(),
+                proto.getPastasPlain(),
+                proto.getUseFirstManaAbility(),
+                proto.getUserIdStr()
+        );
+        return userData;
+    }
+
+    public static mage.proto.UserDataProto toProtoUserData(mage.players.net.UserData userData) {
+        if (userData == null) return mage.proto.UserDataProto.getDefaultInstance();
+        return mage.proto.UserDataProto.newBuilder()
+                .setAvatarId(userData.getAvatarId())
+                .setShowAbilityPickerForced(userData.isShowAbilityPickerForced())
+                .setAllowRequestHandToAll(userData.isAllowRequestHandToAll())
+                .setConfirmEmptyManaPool(userData.isConfirmEmptyManaPool())
+                .setUserSkipPrioritySteps(userData.getUserSkipPrioritySteps() != null ? userData.getUserSkipPrioritySteps() : "")
+                .setFlagName(userData.getFlagName() != null ? userData.getFlagName() : "")
+                .setAskMoveToGraveOrder(userData.isAskMoveToGraveOrder())
+                .setManaPoolAutomatic(userData.isManaPoolAutomatic())
+                .setManaPoolAutomaticRestricted(userData.isManaPoolAutomaticRestricted())
+                .setPastasPlain(userData.getPastasPlain() != null ? userData.getPastasPlain() : "")
+                .setUseFirstManaAbility(userData.isUseFirstManaAbility())
+                .setUserIdStr(userData.getUserIdStr() != null ? userData.getUserIdStr() : "")
+                .build();
     }
 
     // ============================================================================
@@ -223,16 +281,16 @@ public final class ProtoConverter {
     // SkillLevel Conversions
     // ============================================================================
 
-    public static SkillLevel toSkillLevel(mage.proto.SkillLevel protoLevel) {
+    public static mage.constants.SkillLevel toSkillLevel(mage.proto.SkillLevel protoLevel) {
         switch (protoLevel) {
-            case SKILL_LEVEL_BEGINNER: return SkillLevel.BEGINNER;
-            case SKILL_LEVEL_CASUAL: return SkillLevel.CASUAL;
-            case SKILL_LEVEL_SERIOUS: return SkillLevel.SERIOUS;
-            default: return SkillLevel.CASUAL;
+            case SKILL_LEVEL_BEGINNER: return mage.constants.SkillLevel.BEGINNER;
+            case SKILL_LEVEL_CASUAL: return mage.constants.SkillLevel.CASUAL;
+            case SKILL_LEVEL_SERIOUS: return mage.constants.SkillLevel.SERIOUS;
+            default: return mage.constants.SkillLevel.CASUAL;
         }
     }
 
-    public static mage.proto.SkillLevel toProtoSkillLevel(SkillLevel level) {
+    public static mage.proto.SkillLevel toProtoSkillLevel(mage.constants.SkillLevel level) {
         if (level == null) return mage.proto.SkillLevel.SKILL_LEVEL_UNSPECIFIED;
         switch (level) {
             case BEGINNER: return mage.proto.SkillLevel.SKILL_LEVEL_BEGINNER;
@@ -246,22 +304,22 @@ public final class ProtoConverter {
     // Zone Conversions
     // ============================================================================
 
-    public static Zone toZone(mage.proto.Zone protoZone) {
+    public static mage.constants.Zone toZone(mage.proto.Zone protoZone) {
         switch (protoZone) {
-            case ZONE_HAND: return Zone.HAND;
-            case ZONE_GRAVEYARD: return Zone.GRAVEYARD;
-            case ZONE_LIBRARY: return Zone.LIBRARY;
-            case ZONE_BATTLEFIELD: return Zone.BATTLEFIELD;
-            case ZONE_STACK: return Zone.STACK;
-            case ZONE_EXILED: return Zone.EXILED;
-            case ZONE_ALL: return Zone.ALL;
-            case ZONE_OUTSIDE: return Zone.OUTSIDE;
-            case ZONE_COMMAND: return Zone.COMMAND;
+            case ZONE_HAND: return mage.constants.Zone.HAND;
+            case ZONE_GRAVEYARD: return mage.constants.Zone.GRAVEYARD;
+            case ZONE_LIBRARY: return mage.constants.Zone.LIBRARY;
+            case ZONE_BATTLEFIELD: return mage.constants.Zone.BATTLEFIELD;
+            case ZONE_STACK: return mage.constants.Zone.STACK;
+            case ZONE_EXILED: return mage.constants.Zone.EXILED;
+            case ZONE_ALL: return mage.constants.Zone.ALL;
+            case ZONE_OUTSIDE: return mage.constants.Zone.OUTSIDE;
+            case ZONE_COMMAND: return mage.constants.Zone.COMMAND;
             default: return null;
         }
     }
 
-    public static mage.proto.Zone toProtoZone(Zone zone) {
+    public static mage.proto.Zone toProtoZone(mage.constants.Zone zone) {
         if (zone == null) return mage.proto.Zone.ZONE_UNSPECIFIED;
         switch (zone) {
             case HAND: return mage.proto.Zone.ZONE_HAND;
@@ -281,28 +339,28 @@ public final class ProtoConverter {
     // CardType Conversions
     // ============================================================================
 
-    public static CardType toCardType(mage.proto.CardType protoType) {
+    public static mage.constants.CardType toCardType(mage.proto.CardType protoType) {
         switch (protoType) {
-            case CARD_TYPE_ARTIFACT: return CardType.ARTIFACT;
-            case CARD_TYPE_BATTLE: return CardType.BATTLE;
-            case CARD_TYPE_CONSPIRACY: return CardType.CONSPIRACY;
-            case CARD_TYPE_CREATURE: return CardType.CREATURE;
-            case CARD_TYPE_DUNGEON: return CardType.DUNGEON;
-            case CARD_TYPE_ENCHANTMENT: return CardType.ENCHANTMENT;
-            case CARD_TYPE_INSTANT: return CardType.INSTANT;
-            case CARD_TYPE_LAND: return CardType.LAND;
-            case CARD_TYPE_PHENOMENON: return CardType.PHENOMENON;
-            case CARD_TYPE_PLANE: return CardType.PLANE;
-            case CARD_TYPE_PLANESWALKER: return CardType.PLANESWALKER;
-            case CARD_TYPE_SCHEME: return CardType.SCHEME;
-            case CARD_TYPE_SORCERY: return CardType.SORCERY;
-            case CARD_TYPE_KINDRED: return CardType.KINDRED;
-            case CARD_TYPE_VANGUARD: return CardType.VANGUARD;
+            case CARD_TYPE_ARTIFACT: return mage.constants.CardType.ARTIFACT;
+            case CARD_TYPE_BATTLE: return mage.constants.CardType.BATTLE;
+            case CARD_TYPE_CONSPIRACY: return mage.constants.CardType.CONSPIRACY;
+            case CARD_TYPE_CREATURE: return mage.constants.CardType.CREATURE;
+            case CARD_TYPE_DUNGEON: return mage.constants.CardType.DUNGEON;
+            case CARD_TYPE_ENCHANTMENT: return mage.constants.CardType.ENCHANTMENT;
+            case CARD_TYPE_INSTANT: return mage.constants.CardType.INSTANT;
+            case CARD_TYPE_LAND: return mage.constants.CardType.LAND;
+            case CARD_TYPE_PHENOMENON: return mage.constants.CardType.PHENOMENON;
+            case CARD_TYPE_PLANE: return mage.constants.CardType.PLANE;
+            case CARD_TYPE_PLANESWALKER: return mage.constants.CardType.PLANESWALKER;
+            case CARD_TYPE_SCHEME: return mage.constants.CardType.SCHEME;
+            case CARD_TYPE_SORCERY: return mage.constants.CardType.SORCERY;
+            case CARD_TYPE_KINDRED: return mage.constants.CardType.KINDRED;
+            case CARD_TYPE_VANGUARD: return mage.constants.CardType.VANGUARD;
             default: return null;
         }
     }
 
-    public static mage.proto.CardType toProtoCardType(CardType type) {
+    public static mage.proto.CardType toProtoCardType(mage.constants.CardType type) {
         if (type == null) return mage.proto.CardType.CARD_TYPE_UNSPECIFIED;
         switch (type) {
             case ARTIFACT: return mage.proto.CardType.CARD_TYPE_ARTIFACT;
@@ -328,19 +386,19 @@ public final class ProtoConverter {
     // SuperType Conversions
     // ============================================================================
 
-    public static SuperType toSuperType(mage.proto.SuperType protoType) {
+    public static mage.constants.SuperType toSuperType(mage.proto.SuperType protoType) {
         switch (protoType) {
-            case SUPER_TYPE_BASIC: return SuperType.BASIC;
-            case SUPER_TYPE_ELITE: return SuperType.ELITE;
-            case SUPER_TYPE_LEGENDARY: return SuperType.LEGENDARY;
-            case SUPER_TYPE_ONGOING: return SuperType.ONGOING;
-            case SUPER_TYPE_SNOW: return SuperType.SNOW;
-            case SUPER_TYPE_WORLD: return SuperType.WORLD;
+            case SUPER_TYPE_BASIC: return mage.constants.SuperType.BASIC;
+            case SUPER_TYPE_ELITE: return mage.constants.SuperType.ELITE;
+            case SUPER_TYPE_LEGENDARY: return mage.constants.SuperType.LEGENDARY;
+            case SUPER_TYPE_ONGOING: return mage.constants.SuperType.ONGOING;
+            case SUPER_TYPE_SNOW: return mage.constants.SuperType.SNOW;
+            case SUPER_TYPE_WORLD: return mage.constants.SuperType.WORLD;
             default: return null;
         }
     }
 
-    public static mage.proto.SuperType toProtoSuperType(SuperType type) {
+    public static mage.proto.SuperType toProtoSuperType(mage.constants.SuperType type) {
         if (type == null) return mage.proto.SuperType.SUPER_TYPE_UNSPECIFIED;
         switch (type) {
             case BASIC: return mage.proto.SuperType.SUPER_TYPE_BASIC;
@@ -357,20 +415,20 @@ public final class ProtoConverter {
     // Rarity Conversions
     // ============================================================================
 
-    public static Rarity toRarity(mage.proto.Rarity protoRarity) {
+    public static mage.constants.Rarity toRarity(mage.proto.Rarity protoRarity) {
         switch (protoRarity) {
-            case RARITY_LAND: return Rarity.LAND;
-            case RARITY_COMMON: return Rarity.COMMON;
-            case RARITY_UNCOMMON: return Rarity.UNCOMMON;
-            case RARITY_RARE: return Rarity.RARE;
-            case RARITY_MYTHIC: return Rarity.MYTHIC;
-            case RARITY_SPECIAL: return Rarity.SPECIAL;
-            case RARITY_BONUS: return Rarity.BONUS;
+            case RARITY_LAND: return mage.constants.Rarity.LAND;
+            case RARITY_COMMON: return mage.constants.Rarity.COMMON;
+            case RARITY_UNCOMMON: return mage.constants.Rarity.UNCOMMON;
+            case RARITY_RARE: return mage.constants.Rarity.RARE;
+            case RARITY_MYTHIC: return mage.constants.Rarity.MYTHIC;
+            case RARITY_SPECIAL: return mage.constants.Rarity.SPECIAL;
+            case RARITY_BONUS: return mage.constants.Rarity.BONUS;
             default: return null;
         }
     }
 
-    public static mage.proto.Rarity toProtoRarity(Rarity rarity) {
+    public static mage.proto.Rarity toProtoRarity(mage.constants.Rarity rarity) {
         if (rarity == null) return mage.proto.Rarity.RARITY_UNSPECIFIED;
         switch (rarity) {
             case LAND: return mage.proto.Rarity.RARITY_LAND;
@@ -388,21 +446,21 @@ public final class ProtoConverter {
     // TableState Conversions
     // ============================================================================
 
-    public static TableState toTableState(mage.proto.TableState protoState) {
+    public static mage.constants.TableState toTableState(mage.proto.TableState protoState) {
         switch (protoState) {
-            case TABLE_STATE_WAITING: return TableState.WAITING;
-            case TABLE_STATE_READY_TO_START: return TableState.READY_TO_START;
-            case TABLE_STATE_STARTING: return TableState.STARTING;
-            case TABLE_STATE_DRAFTING: return TableState.DRAFTING;
-            case TABLE_STATE_CONSTRUCTING: return TableState.CONSTRUCTING;
-            case TABLE_STATE_DUELING: return TableState.DUELING;
-            case TABLE_STATE_SIDEBOARDING: return TableState.SIDEBOARDING;
-            case TABLE_STATE_FINISHED: return TableState.FINISHED;
+            case TABLE_STATE_WAITING: return mage.constants.TableState.WAITING;
+            case TABLE_STATE_READY_TO_START: return mage.constants.TableState.READY_TO_START;
+            case TABLE_STATE_STARTING: return mage.constants.TableState.STARTING;
+            case TABLE_STATE_DRAFTING: return mage.constants.TableState.DRAFTING;
+            case TABLE_STATE_CONSTRUCTING: return mage.constants.TableState.CONSTRUCTING;
+            case TABLE_STATE_DUELING: return mage.constants.TableState.DUELING;
+            case TABLE_STATE_SIDEBOARDING: return mage.constants.TableState.SIDEBOARDING;
+            case TABLE_STATE_FINISHED: return mage.constants.TableState.FINISHED;
             default: return null;
         }
     }
 
-    public static mage.proto.TableState toProtoTableState(TableState state) {
+    public static mage.proto.TableState toProtoTableState(mage.constants.TableState state) {
         if (state == null) return mage.proto.TableState.TABLE_STATE_UNSPECIFIED;
         switch (state) {
             case WAITING: return mage.proto.TableState.TABLE_STATE_WAITING;
@@ -421,26 +479,26 @@ public final class ProtoConverter {
     // PhaseStep Conversions
     // ============================================================================
 
-    public static PhaseStep toPhaseStep(mage.proto.PhaseStep protoStep) {
+    public static mage.constants.PhaseStep toPhaseStep(mage.proto.PhaseStep protoStep) {
         switch (protoStep) {
-            case PHASE_STEP_UNTAP: return PhaseStep.UNTAP;
-            case PHASE_STEP_UPKEEP: return PhaseStep.UPKEEP;
-            case PHASE_STEP_DRAW: return PhaseStep.DRAW;
-            case PHASE_STEP_PRECOMBAT_MAIN: return PhaseStep.PRECOMBAT_MAIN;
-            case PHASE_STEP_BEGIN_COMBAT: return PhaseStep.BEGIN_COMBAT;
-            case PHASE_STEP_DECLARE_ATTACKERS: return PhaseStep.DECLARE_ATTACKERS;
-            case PHASE_STEP_DECLARE_BLOCKERS: return PhaseStep.DECLARE_BLOCKERS;
-            case PHASE_STEP_FIRST_COMBAT_DAMAGE: return PhaseStep.FIRST_COMBAT_DAMAGE;
-            case PHASE_STEP_COMBAT_DAMAGE: return PhaseStep.COMBAT_DAMAGE;
-            case PHASE_STEP_END_COMBAT: return PhaseStep.END_COMBAT;
-            case PHASE_STEP_POSTCOMBAT_MAIN: return PhaseStep.POSTCOMBAT_MAIN;
-            case PHASE_STEP_END_TURN: return PhaseStep.END_TURN;
-            case PHASE_STEP_CLEANUP: return PhaseStep.CLEANUP;
+            case PHASE_STEP_UNTAP: return mage.constants.PhaseStep.UNTAP;
+            case PHASE_STEP_UPKEEP: return mage.constants.PhaseStep.UPKEEP;
+            case PHASE_STEP_DRAW: return mage.constants.PhaseStep.DRAW;
+            case PHASE_STEP_PRECOMBAT_MAIN: return mage.constants.PhaseStep.PRECOMBAT_MAIN;
+            case PHASE_STEP_BEGIN_COMBAT: return mage.constants.PhaseStep.BEGIN_COMBAT;
+            case PHASE_STEP_DECLARE_ATTACKERS: return mage.constants.PhaseStep.DECLARE_ATTACKERS;
+            case PHASE_STEP_DECLARE_BLOCKERS: return mage.constants.PhaseStep.DECLARE_BLOCKERS;
+            case PHASE_STEP_FIRST_COMBAT_DAMAGE: return mage.constants.PhaseStep.FIRST_COMBAT_DAMAGE;
+            case PHASE_STEP_COMBAT_DAMAGE: return mage.constants.PhaseStep.COMBAT_DAMAGE;
+            case PHASE_STEP_END_COMBAT: return mage.constants.PhaseStep.END_COMBAT;
+            case PHASE_STEP_POSTCOMBAT_MAIN: return mage.constants.PhaseStep.POSTCOMBAT_MAIN;
+            case PHASE_STEP_END_TURN: return mage.constants.PhaseStep.END_TURN;
+            case PHASE_STEP_CLEANUP: return mage.constants.PhaseStep.CLEANUP;
             default: return null;
         }
     }
 
-    public static mage.proto.PhaseStep toProtoPhaseStep(PhaseStep step) {
+    public static mage.proto.PhaseStep toProtoPhaseStep(mage.constants.PhaseStep step) {
         if (step == null) return mage.proto.PhaseStep.PHASE_STEP_UNSPECIFIED;
         switch (step) {
             case UNTAP: return mage.proto.PhaseStep.PHASE_STEP_UNTAP;
@@ -540,23 +598,23 @@ public final class ProtoConverter {
     // AbilityType Conversions
     // ============================================================================
 
-    public static AbilityType toAbilityType(mage.proto.AbilityType protoType) {
+    public static mage.constants.AbilityType toAbilityType(mage.proto.AbilityType protoType) {
         switch (protoType) {
-            case ABILITY_TYPE_PLAY_LAND: return AbilityType.PLAY_LAND;
-            case ABILITY_TYPE_SPELL: return AbilityType.SPELL;
-            case ABILITY_TYPE_STATIC: return AbilityType.STATIC;
-            case ABILITY_TYPE_EVASION: return AbilityType.EVASION;
-            case ABILITY_TYPE_ACTIVATED_NONMANA: return AbilityType.ACTIVATED_NONMANA;
-            case ABILITY_TYPE_ACTIVATED_MANA: return AbilityType.ACTIVATED_MANA;
-            case ABILITY_TYPE_TRIGGERED_NONMANA: return AbilityType.TRIGGERED_NONMANA;
-            case ABILITY_TYPE_TRIGGERED_MANA: return AbilityType.TRIGGERED_MANA;
-            case ABILITY_TYPE_SPECIAL_ACTION: return AbilityType.SPECIAL_ACTION;
-            case ABILITY_TYPE_SPECIAL_MANA_PAYMENT: return AbilityType.SPECIAL_MANA_PAYMENT;
+            case ABILITY_TYPE_PLAY_LAND: return mage.constants.AbilityType.PLAY_LAND;
+            case ABILITY_TYPE_SPELL: return mage.constants.AbilityType.SPELL;
+            case ABILITY_TYPE_STATIC: return mage.constants.AbilityType.STATIC;
+            case ABILITY_TYPE_EVASION: return mage.constants.AbilityType.EVASION;
+            case ABILITY_TYPE_ACTIVATED_NONMANA: return mage.constants.AbilityType.ACTIVATED_NONMANA;
+            case ABILITY_TYPE_ACTIVATED_MANA: return mage.constants.AbilityType.ACTIVATED_MANA;
+            case ABILITY_TYPE_TRIGGERED_NONMANA: return mage.constants.AbilityType.TRIGGERED_NONMANA;
+            case ABILITY_TYPE_TRIGGERED_MANA: return mage.constants.AbilityType.TRIGGERED_MANA;
+            case ABILITY_TYPE_SPECIAL_ACTION: return mage.constants.AbilityType.SPECIAL_ACTION;
+            case ABILITY_TYPE_SPECIAL_MANA_PAYMENT: return mage.constants.AbilityType.SPECIAL_MANA_PAYMENT;
             default: return null;
         }
     }
 
-    public static mage.proto.AbilityType toProtoAbilityType(AbilityType type) {
+    public static mage.proto.AbilityType toProtoAbilityType(mage.constants.AbilityType type) {
         if (type == null) return mage.proto.AbilityType.ABILITY_TYPE_UNSPECIFIED;
         switch (type) {
             case PLAY_LAND: return mage.proto.AbilityType.ABILITY_TYPE_PLAY_LAND;
@@ -577,26 +635,26 @@ public final class ProtoConverter {
     // MageObjectType Conversions
     // ============================================================================
 
-    public static MageObjectType toMageObjectType(mage.proto.MageObjectType protoType) {
+    public static mage.constants.MageObjectType toMageObjectType(mage.proto.MageObjectType protoType) {
         switch (protoType) {
-            case MAGE_OBJECT_TYPE_ABILITY_STACK_FROM_CARD: return MageObjectType.ABILITY_STACK_FROM_CARD;
-            case MAGE_OBJECT_TYPE_ABILITY_STACK_FROM_TOKEN: return MageObjectType.ABILITY_STACK_FROM_TOKEN;
-            case MAGE_OBJECT_TYPE_CARD: return MageObjectType.CARD;
-            case MAGE_OBJECT_TYPE_COPY_CARD: return MageObjectType.COPY_CARD;
-            case MAGE_OBJECT_TYPE_TOKEN: return MageObjectType.TOKEN;
-            case MAGE_OBJECT_TYPE_SPELL: return MageObjectType.SPELL;
-            case MAGE_OBJECT_TYPE_PERMANENT: return MageObjectType.PERMANENT;
-            case MAGE_OBJECT_TYPE_DUNGEON: return MageObjectType.DUNGEON;
-            case MAGE_OBJECT_TYPE_EMBLEM: return MageObjectType.EMBLEM;
-            case MAGE_OBJECT_TYPE_COMMANDER: return MageObjectType.COMMANDER;
-            case MAGE_OBJECT_TYPE_DESIGNATION: return MageObjectType.DESIGNATION;
-            case MAGE_OBJECT_TYPE_PLANE: return MageObjectType.PLANE;
-            case MAGE_OBJECT_TYPE_NULL: return MageObjectType.NULL;
-            default: return MageObjectType.NULL;
+            case MAGE_OBJECT_TYPE_ABILITY_STACK_FROM_CARD: return mage.constants.MageObjectType.ABILITY_STACK_FROM_CARD;
+            case MAGE_OBJECT_TYPE_ABILITY_STACK_FROM_TOKEN: return mage.constants.MageObjectType.ABILITY_STACK_FROM_TOKEN;
+            case MAGE_OBJECT_TYPE_CARD: return mage.constants.MageObjectType.CARD;
+            case MAGE_OBJECT_TYPE_COPY_CARD: return mage.constants.MageObjectType.COPY_CARD;
+            case MAGE_OBJECT_TYPE_TOKEN: return mage.constants.MageObjectType.TOKEN;
+            case MAGE_OBJECT_TYPE_SPELL: return mage.constants.MageObjectType.SPELL;
+            case MAGE_OBJECT_TYPE_PERMANENT: return mage.constants.MageObjectType.PERMANENT;
+            case MAGE_OBJECT_TYPE_DUNGEON: return mage.constants.MageObjectType.DUNGEON;
+            case MAGE_OBJECT_TYPE_EMBLEM: return mage.constants.MageObjectType.EMBLEM;
+            case MAGE_OBJECT_TYPE_COMMANDER: return mage.constants.MageObjectType.COMMANDER;
+            case MAGE_OBJECT_TYPE_DESIGNATION: return mage.constants.MageObjectType.DESIGNATION;
+            case MAGE_OBJECT_TYPE_PLANE: return mage.constants.MageObjectType.PLANE;
+            case MAGE_OBJECT_TYPE_NULL: return mage.constants.MageObjectType.NULL;
+            default: return mage.constants.MageObjectType.NULL;
         }
     }
 
-    public static mage.proto.MageObjectType toProtoMageObjectType(MageObjectType type) {
+    public static mage.proto.MageObjectType toProtoMageObjectType(mage.constants.MageObjectType type) {
         if (type == null) return mage.proto.MageObjectType.MAGE_OBJECT_TYPE_UNSPECIFIED;
         switch (type) {
             case ABILITY_STACK_FROM_CARD: return mage.proto.MageObjectType.MAGE_OBJECT_TYPE_ABILITY_STACK_FROM_CARD;
@@ -695,17 +753,17 @@ public final class ProtoConverter {
     // View Object Conversions (Java View -> Proto)
     // ============================================================================
 
-    public static CounterViewProto toProtoCounterView(CounterView view) {
-        if (view == null) return CounterViewProto.getDefaultInstance();
-        return CounterViewProto.newBuilder()
+    public static mage.proto.CounterViewProto toProtoCounterView(CounterView view) {
+        if (view == null) return mage.proto.CounterViewProto.getDefaultInstance();
+        return mage.proto.CounterViewProto.newBuilder()
                 .setName(view.getName() != null ? view.getName() : "")
                 .setCount(view.getCount())
                 .build();
     }
 
-    public static ManaPoolViewProto toProtoManaPoolView(ManaPoolView view) {
-        if (view == null) return ManaPoolViewProto.getDefaultInstance();
-        return ManaPoolViewProto.newBuilder()
+    public static mage.proto.ManaPoolViewProto toProtoManaPoolView(ManaPoolView view) {
+        if (view == null) return mage.proto.ManaPoolViewProto.getDefaultInstance();
+        return mage.proto.ManaPoolViewProto.newBuilder()
                 .setRed(view.getRed())
                 .setGreen(view.getGreen())
                 .setBlue(view.getBlue())
@@ -719,29 +777,167 @@ public final class ProtoConverter {
     // DeckCardLists Conversion
     // ============================================================================
 
-    public static DeckCardLists fromProtoDeckCardLists(DeckCardListsProto proto) {
+    public static DeckCardLists fromProtoDeckCardLists(mage.proto.DeckCardListsProto proto) {
         if (proto == null) return new DeckCardLists();
         DeckCardLists deck = new DeckCardLists();
         deck.setName(proto.getName());
-        for (String card : proto.getCardsList()) {
-            deck.getCards().add(card);
+        // Cards are stored as simple strings in proto format "cardName|setCode|cardNum|quantity"
+        for (String cardStr : proto.getCardsList()) {
+            mage.cards.decks.DeckCardInfo cardInfo = mage.cards.decks.DeckCardInfo.createFromString(cardStr);
+            if (cardInfo != null) {
+                deck.getCards().add(cardInfo);
+            }
         }
-        for (String card : proto.getSideboardList()) {
-            deck.getSideboard().add(card);
+        for (String cardStr : proto.getSideboardList()) {
+            mage.cards.decks.DeckCardInfo cardInfo = mage.cards.decks.DeckCardInfo.createFromString(cardStr);
+            if (cardInfo != null) {
+                deck.getSideboard().add(cardInfo);
+            }
         }
         return deck;
     }
 
-    public static DeckCardListsProto toProtoDeckCardLists(DeckCardLists deck) {
-        if (deck == null) return DeckCardListsProto.getDefaultInstance();
-        DeckCardListsProto.Builder builder = DeckCardListsProto.newBuilder()
+    public static mage.proto.DeckCardListsProto toProtoDeckCardLists(DeckCardLists deck) {
+        if (deck == null) return mage.proto.DeckCardListsProto.getDefaultInstance();
+        mage.proto.DeckCardListsProto.Builder builder = mage.proto.DeckCardListsProto.newBuilder()
                 .setName(deck.getName() != null ? deck.getName() : "");
-        for (Object card : deck.getCards()) {
+        for (mage.cards.decks.DeckCardInfo card : deck.getCards()) {
             builder.addCards(card.toString());
         }
-        for (Object card : deck.getSideboard()) {
+        for (mage.cards.decks.DeckCardInfo card : deck.getSideboard()) {
             builder.addSideboard(card.toString());
         }
         return builder.build();
+    }
+
+    // ============================================================================
+    // GameTypeView Conversion
+    // ============================================================================
+
+    public static mage.proto.GameTypeViewProto toProtoGameTypeView(mage.view.GameTypeView view) {
+        if (view == null) return mage.proto.GameTypeViewProto.getDefaultInstance();
+        return mage.proto.GameTypeViewProto.newBuilder()
+                .setName(view.getName() != null ? view.getName() : "")
+                .setMinPlayers(view.getMinPlayers())
+                .setMaxPlayers(view.getMaxPlayers())
+                .setNumTeams(view.getNumTeams())
+                .setPlayersPerTeam(view.getPlayersPerTeam())
+                .setUseRange(view.isUseRange())
+                .setUseAttackOption(view.isUseAttackOption())
+                .build();
+    }
+
+    // ============================================================================
+    // TournamentTypeView Conversion
+    // ============================================================================
+
+    public static mage.proto.TournamentTypeViewProto toProtoTournamentTypeView(mage.view.TournamentTypeView view) {
+        if (view == null) return mage.proto.TournamentTypeViewProto.getDefaultInstance();
+        return mage.proto.TournamentTypeViewProto.newBuilder()
+                .setName(view.getName() != null ? view.getName() : "")
+                .setMinPlayers(view.getMinPlayers())
+                .setMaxPlayers(view.getMaxPlayers())
+                .setNumBoosters(view.getNumBoosters())
+                .setDraft(view.isDraft())
+                .setLimited(view.isLimited())
+                .setCubeBooster(view.isCubeBooster())
+                .setElimination(view.isElimination())
+                .setRandom(view.isRandom())
+                .setReshuffled(view.isReshuffled())
+                .setRichMan(view.isRichMan())
+                .setJumpstart(view.isJumpstart())
+                .build();
+    }
+
+    // ============================================================================
+    // TableView Conversion
+    // ============================================================================
+
+    public static mage.proto.TableViewProto toProtoTableView(mage.view.TableView view) {
+        if (view == null) return mage.proto.TableViewProto.getDefaultInstance();
+        mage.proto.TableViewProto.Builder builder = mage.proto.TableViewProto.newBuilder()
+                .setTableId(view.getTableId() != null ? view.getTableId().toString() : "")
+                .setTableName(view.getTableName() != null ? view.getTableName() : "")
+                .setControllerName(view.getControllerName() != null ? view.getControllerName() : "")
+                .setGameType(view.getGameType() != null ? view.getGameType() : "")
+                .setDeckType(view.getDeckType() != null ? view.getDeckType() : "")
+                .setTableState(toProtoTableState(view.getTableState()))
+                .setCreateTime(view.getCreateTime() != null ? view.getCreateTime().getTime() : 0)
+                .setSeatsInfo(view.getSeatsInfo() != null ? view.getSeatsInfo() : "")
+                .setSkillLevel(view.getSkillLevel() != null ? view.getSkillLevel() : "")
+                .setQuitRatio(view.getQuitRatio() != null ? view.getQuitRatio() : "")
+                .setMinimumRating(view.getMinimumRating())
+                .setLimited(view.isLimited())
+                .setRated(view.isRated())
+                .setPassworded(view.isPassworded())
+                .setSpectatorsAllowed(view.getSpectatorsAllowed())
+                .setRollbackTurnsAllowed(view.getRollbackTurnsAllowed())
+                .setWins(view.getWins())
+                .setFreeMulligans(view.getFreeMulligans())
+                .setPlaneChase(view.isPlaneChase())
+                .setTournament(view.isTournament())
+                .setRowColor(view.getRowColor() != null ? view.getRowColor() : "");
+
+        if (view.getTableState() != null) {
+            builder.setTableStateStr(view.getTableState().toString());
+        }
+
+        return builder.build();
+    }
+
+    // ============================================================================
+    // MatchView Conversion
+    // ============================================================================
+
+    public static mage.proto.MatchViewProto toProtoMatchView(mage.view.MatchView view) {
+        if (view == null) return mage.proto.MatchViewProto.getDefaultInstance();
+        mage.proto.MatchViewProto.Builder builder = mage.proto.MatchViewProto.newBuilder()
+                .setMatchId(view.getMatchId() != null ? view.getMatchId().toString() : "")
+                .setMatchName(view.getMatchName() != null ? view.getMatchName() : "")
+                .setGameType(view.getGameType() != null ? view.getGameType() : "")
+                .setDeckType(view.getDeckType() != null ? view.getDeckType() : "")
+                .setGames(view.getGames() != null ? view.getGames() : "")
+                .setResult(view.getResult() != null ? view.getResult() : "")
+                .setStartTime(view.getStartTime() != null ? view.getStartTime().getTime() : 0)
+                .setEndTime(view.getEndTime() != null ? view.getEndTime().getTime() : 0)
+                .setReplayAvailable(view.isReplayAvailable())
+                .setRated(view.isRated());
+
+        if (view.getPlayers() != null) {
+            for (String player : view.getPlayers()) {
+                builder.addPlayers(player);
+            }
+        }
+
+        return builder.build();
+    }
+
+    // ============================================================================
+    // RoomUsersView Conversion
+    // ============================================================================
+
+    public static mage.proto.RoomUsersViewProto toProtoRoomUsersView(mage.view.RoomUsersView view) {
+        if (view == null) return mage.proto.RoomUsersViewProto.getDefaultInstance();
+        mage.proto.RoomUsersViewProto.Builder builder = mage.proto.RoomUsersViewProto.newBuilder()
+                .setRoomId(view.getRoomId() != null ? view.getRoomId().toString() : "");
+
+        if (view.getUsersView() != null) {
+            for (mage.view.UsersView userView : view.getUsersView()) {
+                builder.addUsers(toProtoUsersView(userView));
+            }
+        }
+
+        return builder.build();
+    }
+
+    public static mage.proto.UsersViewProto toProtoUsersView(mage.view.UsersView view) {
+        if (view == null) return mage.proto.UsersViewProto.getDefaultInstance();
+        return mage.proto.UsersViewProto.newBuilder()
+                .setUserName(view.getUserName() != null ? view.getUserName() : "")
+                .setInfoState(view.getInfoState() != null ? view.getInfoState() : "")
+                .setInfoGames(view.getInfoGames() != null ? view.getInfoGames() : "")
+                .setInfoPing(view.getInfoPing() != null ? view.getInfoPing() : "")
+                .setFlagName(view.getFlagName() != null ? view.getFlagName() : "")
+                .build();
     }
 }
